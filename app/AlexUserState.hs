@@ -1,20 +1,40 @@
 {-# LANGUAGE TemplateHaskell #-}
 -- | Definition of AlexUserState
 -- | It is used here to use micro lenses with it.
-module AlexUserState (AlexUserState (..), alexInitUserState, integers, reals) where
-import qualified Data.Map.Strict as Map
-import Lens.Micro
-import Lens.Micro.TH
+-- | All methods are public.
+module AlexUserState where
+import qualified Data.Map.Strict               as Map
+import           Lens.Micro
+import           Lens.Micro.TH
 
-data AlexUserState = AlexUserState
-  { -- | Integers map. Contains all definition in a point
-    _integers :: Map.Map Char Int,
-    -- | Reals map. Contains all real definitions in a point.
-    _reals :: Map.Map Char Double
+data TypeDefinition = DBool
+                | DInt
+                | DChar
+                | DUnit
+                | DNothing
+                | DFunction [TypeDefinition]
+                | DMult [TypeDefinition]         -- ^ Mult Type. Maybe use a Map.String Definition
+                | DSum (Map.Map String TypeDefinition) -- ^ Sum Type
+                deriving (Ord, Eq, Show, Read)
+
+data ValueDefinition = VBool Bool
+      | VInt Int
+      | VChar Char
+      deriving (Ord, Eq, Show, Read)
+
+data Definition = Definition { _type :: TypeDefinition
+                             , _value :: Maybe ValueDefinition -- ^ Nothing represents bottom or undefined
+                             }
+                | TypeD { _typeD :: TypeDefinition }
+
+newtype AlexUserState = AlexUserState
+  { -- | Definitions map. Contains all definition in a point
+    _definitions :: [Map.Map String Definition]
   }
-  deriving (Show, Eq, Ord, Read)
 
 makeLenses ''AlexUserState
 
 alexInitUserState :: AlexUserState
-alexInitUserState = AlexUserState Map.empty Map.empty
+alexInitUserState = AlexUserState [Map.empty]
+
+data ABC = A | B | C Int Bool

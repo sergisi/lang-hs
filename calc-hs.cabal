@@ -1,0 +1,70 @@
+cabal-version:      2.4
+name:               calc-hs
+version:            0.1.0.0
+
+-- A short (one-line) description of the package.
+-- synopsis:
+
+-- A longer description of the package.
+-- description:
+
+-- A URL where users can report bugs.
+-- bug-reports:
+
+-- The license under which the package is released.
+-- license:
+author:             Sergi Simón Balcells
+maintainer:         sergi.simon@ce.eurecat.org
+
+-- A copyright notice.
+-- copyright:
+-- category:
+extra-source-files: CHANGELOG.md
+
+library
+    exposed-modules:
+        AlexUserState,
+        Lexer,
+        Parser,
+        ParserData
+
+    -- LANGUAGE extensions used by modules in this package.
+    -- other-extensions:
+    build-depends:    base ^>=4.14.0.0,
+                      array,
+                      containers,
+                      microlens,
+                      microlens-th
+    hs-source-dirs:   app
+    default-language: Haskell2010
+
+executable calc-hs
+    main-is:          Main.hs
+
+    -- Modules included in this executable, other than Main.
+    other-modules:
+        AlexUserState,
+        Lexer,
+        Parser,
+        ParserData
+
+    -- LANGUAGE extensions used by modules in this package.
+    -- other-extensions:
+    build-depends:    base ^>=4.14.0.0,
+                      array,
+                      containers,
+                      microlens,
+                      microlens-th
+    hs-source-dirs:   app
+    default-language: Haskell2010
+
+test-suite TestSuite
+    build-depends:  calc-hs
+    type:           exitcode-stdio-1.0
+    hs-source-dirs: test
+    default-language: Haskell2010
+    main-is:          Main.hs
+    build-depends:    base <= 5,
+                      tasty,
+                      tasty-hunit,
+                      tasty-quickcheck

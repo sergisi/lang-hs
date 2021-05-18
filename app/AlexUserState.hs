@@ -37,4 +37,3 @@ makeLenses ''AlexUserState
 alexInitUserState :: AlexUserState
 alexInitUserState = AlexUserState [Map.empty]
 
-data ABC = A | B | C Int Bool

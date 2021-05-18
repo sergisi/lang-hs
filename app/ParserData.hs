@@ -1,7 +1,6 @@
 -- | Module where it contains the Parser data, as it will need GADTS
 module ParserData
   ( Exp(..)
-  , eval
   )
 where
 
@@ -36,8 +35,9 @@ data Exp = TSum Exp Exp
   | TXor Exp Exp 
   | TIntToReal Exp
   | TRealToInt Exp
+  | TNone
   deriving (Show, Read, Eq, Ord)
-
+{-
 {-- | Evaluates GADT mantaining the state
 -- This functions lets avaluate an Alex (Exp a) to an
 -- Alex a using GADTs powerful type system.
@@ -242,3 +242,4 @@ ifBothLeft _ _        _        = do
     ++ show line
     ++ ':'
     :  show column
+-}

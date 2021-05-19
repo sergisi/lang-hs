@@ -13,7 +13,7 @@ TypeDef = TypeDef "|" MultType | {nothing} | FunctionDef
 Fun = Fun "->" Name | Nothing
 NamedMultType = Name "::" TypeDef | NamedMultType "," Name "::" TypeDef
 MultType = Name [NamesOrFuns] | Name "{" NamedMultType "}"
-Def = int | float | bool | FunctionDef | Names
+Def = int | float | bool | FunctionDef | Names | IntExp | BoolExp | FloatExp
 Statements = Statements; Def 
            | Statements; DefStatement 
            | Statements; return Def
@@ -74,3 +74,51 @@ ret r
 
 call parm
 ```
+
+
+## Dissenys de llenguatge
+### Constants vs variables:
+#### Proposta
+Constant per default, oferir variables pels bucles.
+
+Crec que caldria llavors fer un analitzador sintàctic que optimitzes les crides. És a dir, si no es necessita, *no es crida*, si una constant deixa de ser utilitzada, pot agafar-se com a variable lliure. Això faria que s'evalués al revés les operacions.
+
+Exemple
+
+```
+main :: String[] -> Int { 
+  a = 2 + 3 * 4;
+  b = 5 - 3;
+  c = a - b;
+  d = if b > a {
+    b - a;
+  } else {
+    a - b;
+  };
+  while i < n with {
+    acc :: Int = 0;
+    n :: Int = 7;
+    i :: Int = 1;
+  } do {
+    acc = acc + i;
+    i = i + 1;
+  }
+  acc + b;
+};
+```
+
+Passaria a 
+
+```
+r1 = 3 * 4;
+r1 = r1 + 2; -- ja no es necessita r1
+r2 = 5 - 3;
+r1 = r1 - r2; -- ja no es necessita r1
+r1 = 2 * r1; -- ...
+r1 = b - r1;
+RET r1
+```
+
+Forma de fer-ho, començar per sota i mantenir quines variables s'han necessitat fins ara.
+
+Problema, com fem amb els ifs?

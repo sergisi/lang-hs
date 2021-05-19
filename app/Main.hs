@@ -8,4 +8,4 @@ main :: IO ()
 main =
   do
     s <- getContents
-    print $ runAlex s $ calc >>= traverse eval . reverse
+    print $ runAlex s calc

@@ -116,28 +116,28 @@ Statement : Def          { TNone }
           | "return" Def { TNone }
 
 -- Maybe we could use a lot from here.
--- Exp :: { Exp }
--- Exp : Exp '+' Exp { TSum $1 $3 }
---     | Exp '-' Exp { TMinus $1 $3 }
---     | Exp '*' Exp { TMult $1 $3 }
---     | Exp '/' Exp { TDiv $1 $3 }
---     | Exp '%' Exp { TMod $1 $3 }
---     | Exp "div" Exp { TDivInt $1 $3}
---     | Exp ">>" Exp { TRightShift $1 $3 }
---     | Exp "<<" Exp { TLeftShift $1 $3 }
---     | Exp '&' Exp { TAnd $1 $3 }
---     | Exp '|' Exp { TOr $1 $3 }
---     | Exp '^' Exp { TXor $1 $3 }
---     | "cast" Exp   { TRealToInt $2 }
---     | "real" Exp  { TIntToReal $2 }
---     | '~' Exp     { TCompAUn $2 }
---     | '-' Exp     { TNegate $2}
---     | '+' Exp     { TPositive $2}
---     | int         { TVal $1 }
---     | double      { TRealVal $1 }
---     | '(' Exp ')' { TBrack $2 }
---     | rvar        { TRealGet $1 }
---     | ivar        { TIntGet $1 }
+MathExp :: { Exp }
+MathExp : MathExp '+'   MathExp { TSum $1 $3 }
+        | MathExp '-'   MathExp { TMinus $1 $3 }
+        | MathExp '*'   MathExp { TMult $1 $3 }
+        | MathExp '/'   MathExp { TDiv $1 $3 }
+        | MathExp '%'   MathExp { TMod $1 $3 }
+        | MathExp "div" MathExp { TDivInt $1 $3}
+        | MathExp ">>"  MathExp { TRightShift $1 $3 }
+        | MathExp "<<"  MathExp { TLeftShift $1 $3 }
+        | MathExp '&'   MathExp { TAnd $1 $3 }
+        | MathExp '|'   MathExp { TOr $1 $3 }
+        | MathExp '^'   MathExp { TXor $1 $3 }
+        | "cast"    MathExp { TRealToInt $2 }
+        | "real"    MathExp { TIntToReal $2 }
+        | '~' MathExp       { TCompAUn $2 }
+        | '-' MathExp       { TNegate $2}
+        | '+' MathExp       { TPositive $2}
+        | int           { TVal $1 }
+        | double        { TRealVal $1 }
+        | '(' MathExp   ')' { TBrack $2 }
+        | rvar          { TRealGet $1 }
+        | ivar          { TIntGet $1 }
 
 
 {

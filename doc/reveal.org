@@ -67,3 +67,58 @@ En ghc:
 - El compilat pot ser més ràpid, sobretot si s'utilitza moltes arrays i nombres (estrany en haskell).
 - Compila molt més lent.
 #+end_comment
+
+* Idris
+** Que és Idris
+#+begin_comment
+Que és Idris?
+- Idris és un llenguatge funcional
+- Dependent types
+  - No hi ha tanta distinció entre tipus i valors
+  - Tipus depenen de valors
+- Llenguatge per a encoratjar el Type Driven Development
+  - Els tipus són eines per a crear els programes. Es defineixen els tipus 
+    del nostre programa i s'utilitza el compilador i el type checker per A
+    cosntruir un programa complet que satisfagi el tipus. 
+    Com més informació tinguem sobreels tipus, mes seguretat tindrem
+    de que el nostre programa serà correcte.
+#+end_comment
+
+** Problemàtica
+De mateixa manera que haskell, idirs te visions diferents sobre l'objectiu de la compilació.
+Idirs ha estat disenyat per a poguer generar codi per diferents backends.
+
+** Backends Oficials:
+- Per Defecte: C
+- Per Web: Javascript, Node.js
+
+** Third Party:
+No son mantinguts per els desenvolupadors d'idris
+- .NET, Mono, Unity
+- Erlang
+- Java
+- JVM
+- LLVM
+- Malfunction
+- Ocaml
+- Python
+- PHP
+- Ruby
+
+** Llenguatge Intermedi
+Per això, idirs abans de traduir a un dels backends disponibles, 
+tradueix a un llenguatge intermedi anomenat: TT (perque s'asembla a 
+la lletra grega pi majuscula).
+
+** Llenguatge Intermedi
+#+begin_src dot :file img/lleng-inter2.png :cmdline -Tpng :exports none :results silent
+digraph G {
+
+    Idris -> "Llenguatge Intermedi" -> C;
+    "Llenguatge Intermedi" -> Javascript
+    "Llenguatge Intermedi" -> "Node.js"
+    "Llenguatge Intermedi" -> "Python"
+    "Llenguatge Intermedi" -> "LLVM"
+    "Llenguatge Intermedi" -> "..."
+}
+#+end_src

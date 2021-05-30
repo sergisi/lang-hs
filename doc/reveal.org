@@ -22,5 +22,48 @@ digraph G {
 
 [[file:img/lleng-inter.png]]
 ** Cmm
+Neix de C--
+#+begin_comment
+- Neix de C--
+- No te res d'alt nivell
+  + Tipus
+- Les especificacions estan fetes per assemblar-se encara més a codi màquina
+- A nivell de haskell, ens permet transformar funcions recursives a iteratives.
+- Eliminar els tipus.
+- Eliminar les generalitzacions.
+#+end_comment
 
-** aa
+** Diferencies entre ells
+#+begin_comment
+https://downloads.haskell.org/ghc/latest/docs/html/users_guide/codegens.html
+#+end_comment
+*** Codi natiu
+#+begin_comment
+- Optimitzacions
+  + Eliminar registres per graph coloring
+- Diferents arquitectures
+  + Com x86 o Darwin
+- L'objectiu és compilar el codi relativament ràpid i que el codi sigui relativament ràpid
+#+end_comment
+*** C
+#+begin_comment
+- Primer backend que es va realitzar
+- Es desencoratge al seu ús, més enllà de curiositat.
+- Està deprecated desde fa anys.
+#+end_comment
+*** LLVM
+#+begin_comment
+Que és LLVM?
+- No es un acronim.
+- Es un compilador obert a extensions.
+- Es obert a nous llenguatges de programació.
+- Llicència Apache: Restriccions menys dures que gcc (GPL vs Apache)
+Compiladors de llengues conegudes:
+- Rust
+- Java
+- Clang
+
+En ghc:
+- El compilat pot ser més ràpid, sobretot si s'utilitza moltes arrays i nombres (estrany en haskell).
+- Compila molt més lent.
+#+end_comment

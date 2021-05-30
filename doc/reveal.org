@@ -1,0 +1,26 @@
+#+TITLE: Llenguatges funcionals
+
+* Introducció
+** Cas d'estudi Haskell
+** Cas d'estudi Idris
+
+* Haskell
+** Problemàtica
+Visions diferents sobre l'objectiu de la compilació:
+- C
+- LLVM
+- Codi natiu
+** Solució: Llenguatge intermedi
+#+begin_src dot :file img/lleng-inter.png :cmdline -Tpng :exports none :results silent
+digraph G {
+
+    Haskell -> "Llenguatge Intermedi" -> C;
+    "Llenguatge Intermedi" -> LLVM
+    "Llenguatge Intermedi" -> "Codi natiu"
+}
+#+end_src
+
+[[file:img/lleng-inter.png]]
+** Cmm
+
+** aa

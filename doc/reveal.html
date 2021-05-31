@@ -15,7 +15,7 @@
 <div class="reveal">
 <div class="slides">
 <section id="sec-title-slide">
-<h1 class="title">Llenguatges funcionals</h1><h2 class="author">Joaquim Picó, Sergi Simón</h2><p class="date">Created: 2021-05-30 Sun 20:54</p>
+<h1 class="title">Llenguatges funcionals</h1><h2 class="author">Joaquim Picó, Sergi Simón</h2><p class="date">Created: 2021-05-31 Mon 20:20</p>
 </section>
 <section>
 <section id="slide-1">
@@ -28,17 +28,102 @@
 </section>
 <section id="slide-1-2">
 <h3 id="1-2"><span class="section-number-3">1.2</span> Cas d&rsquo;estudi Idris</h3>
+<div class="org-src-container">
+
+<pre class="src src-idris"><span style="color: #3B4252; background-color: #D8DEE9;">isPalindrome</span><span style="color: #842879;">:</span> <span style="color: #3B4252; background-color: #D8DEE9;">String</span> <span style="color: #842879;">-&gt;</span> <span style="color: #3B4252; background-color: #D8DEE9;">Bool</span>
+<span style="color: #3B4252; background-color: #D8DEE9;">isPalindrome</span> <span style="color: #3B4252; background-color: #D8DEE9;">str</span> <span style="color: #842879;">=</span> <span style="color: #3B4252; background-color: #D8DEE9;">str</span> <span style="color: #842879;">==</span> <span style="color: #3B4252; background-color: #D8DEE9;">reverse</span> <span style="color: #3B4252; background-color: #D8DEE9;">str</span>
+</pre>
+</div>
 
 </section>
 </section>
 <section>
 <section id="slide-2">
-<h2 id="2"><span class="section-number-2">2</span> Haskell</h2>
+<h2 id="2"><span class="section-number-2">2</span> Context Històric</h2>
 <div class="outline-text-2" id="text-2">
 </div>
 </section>
 <section id="slide-2-1">
-<h3 id="2-1"><span class="section-number-3">2.1</span> Problemàtica</h3>
+<h3 id="2-1"><span class="section-number-3">2.1</span> 1970~1980</h3>
+</section>
+<section id="slide-2-2">
+<h3 id="2-2"><span class="section-number-3">2.2</span> Ordinadors diferents a Von Neumann</h3>
+<p>
+Basats en Càlcul Lambda en comptes de les màquines de Turing
+</p>
+</section>
+<section id="slide-2-3">
+<h3 id="2-3"><span class="section-number-3">2.3</span> No va funcionar</h3>
+</section>
+<section id="slide-2-4">
+<h3 id="2-4"><span class="section-number-3">2.4</span> 1977 John Backus</h3>
+<ul>
+<li>Fortran</li>
+<li>ALGOL</li>
+<li>BNF (Backus-Naur Form)</li>
+
+</ul>
+<div class="org-src-container">
+
+<pre class="src src-text">&lt;real number&gt; ::= &lt;sign&gt;&lt;natural number&gt; |
+                  &lt;sign&gt;&lt;natural number&gt;'.'&lt;digit sequence&gt; |
+                  &lt;sign&gt;'.'&lt;digit&gt;&lt;digit sequence&gt; |
+                  &lt;sign&gt;&lt;real number&gt;'e'&lt;natural number&gt;
+
+</pre>
+</div>
+</section>
+<section id="slide-2-5">
+<h3 id="2-5"><span class="section-number-3">2.5</span> La crida als llenguatges funcionals</h3>
+</section>
+<section id="slide-2-6">
+<h3 id="2-6"><span class="section-number-3">2.6</span> Moltes més conferències i llenguatges funcionals</h3>
+<ul>
+<li>Miranda</li>
+<li>ML</li>
+<li>Orwell</li>
+<li>&#x2026;</li>
+
+</ul>
+</section>
+<section id="slide-2-7">
+<h3 id="2-7"><span class="section-number-3">2.7</span> Moltes Arquitectures</h3>
+
+</section>
+<section id="slide-2-8">
+<h3 id="2-8"><span class="section-number-3">2.8</span> Molts compiladors</h3>
+</section>
+<section id="slide-2-9">
+<h3 id="2-9"><span class="section-number-3">2.9</span> Molt de Caos</h3>
+</section>
+<section id="slide-2-10">
+<h3 id="2-10"><span class="section-number-3">2.10</span> Dos organitzacions</h3>
+<ul>
+<li>Lisp and Functional Programming</li>
+<li>Functional Programming Arquitectures</li>
+
+</ul>
+<p>
+Formen
+</p>
+<ul>
+<li>Functional Programming and Computing Arquitectures</li>
+
+</ul>
+</section>
+<section id="slide-2-11">
+<h3 id="2-11"><span class="section-number-3">2.11</span> Haskell 1</h3>
+
+</section>
+</section>
+<section>
+<section id="slide-3">
+<h2 id="3"><span class="section-number-2">3</span> Haskell</h2>
+<div class="outline-text-2" id="text-3">
+</div>
+</section>
+<section id="slide-3-1">
+<h3 id="3-1"><span class="section-number-3">3.1</span> Problemàtica</h3>
 <p>
 Visions diferents sobre l&rsquo;objectiu de la compilació:
 </p>
@@ -49,38 +134,80 @@ Visions diferents sobre l&rsquo;objectiu de la compilació:
 
 </ul>
 </section>
-<section id="slide-2-2">
-<h3 id="2-2"><span class="section-number-3">2.2</span> Solució: Llenguatge intermedi</h3>
+<section id="slide-3-2">
+<h3 id="3-2"><span class="section-number-3">3.2</span> Solució: Llenguatge intermedi</h3>
 
-<div id="org324516d" class="figure">
+<div id="org7e5cb45" class="figure">
 <p><img src="img/lleng-inter.png" alt="lleng-inter.png" />
 </p>
 </div>
 </section>
-<section id="slide-2-3">
-<h3 id="2-3"><span class="section-number-3">2.3</span> Cmm</h3>
+<section id="slide-3-3">
+<h3 id="3-3"><span class="section-number-3">3.3</span> Cmm</h3>
 <p>
 Neix de C&#x2013;
 </p>
 
 </section>
-<section id="slide-2-4">
-<h3 id="2-4"><span class="section-number-3">2.4</span> Diferencies entre ells</h3>
+<section id="slide-3-4">
+<h3 id="3-4"><span class="section-number-3">3.4</span> Diferencies entre ells</h3>
 </section>
-<section id="slide-2-4-1">
-<h4 id="2-4-1"><span class="section-number-4">2.4.1</span> Codi natiu</h4>
+<section id="slide-3-4-1">
+<h4 id="3-4-1"><span class="section-number-4">3.4.1</span> Codi natiu</h4>
 </section>
-<section id="slide-2-4-2">
-<h4 id="2-4-2"><span class="section-number-4">2.4.2</span> C</h4>
+<section id="slide-3-4-2">
+<h4 id="3-4-2"><span class="section-number-4">3.4.2</span> C</h4>
 </section>
-<section id="slide-2-4-3">
-<h4 id="2-4-3"><span class="section-number-4">2.4.3</span> LLVM</h4>
+<section id="slide-3-4-3">
+<h4 id="3-4-3"><span class="section-number-4">3.4.3</span> LLVM</h4>
 
 </section>
 </section>
 <section>
-<section id="slide-3">
-<h2 id="3"><span class="section-number-2">3</span> Idris</h2>
+<section id="slide-4">
+<h2 id="4"><span class="section-number-2">4</span> Idris</h2>
+<div class="outline-text-2" id="text-4">
+</div>
+</section>
+<section id="slide-4-1">
+<h3 id="4-1"><span class="section-number-3">4.1</span> Problemàtica</h3>
+<ul>
+<li>C</li>
+<li>JavaScript</li>
+<li>Node.js</li>
+
+</ul>
+
+</section>
+<section id="slide-4-2">
+<h3 id="4-2"><span class="section-number-3">4.2</span> Solució</h3>
+
+<div id="orgf6997a3" class="figure">
+<p><img src="img/lleng-inter2.png" alt="lleng-inter2.png" />
+</p>
+</div>
+
+</section>
+<section id="slide-4-3">
+<h3 id="4-3"><span class="section-number-3">4.3</span> Backends</h3>
+<ul>
+<li>Oficials
+<ul>
+<li>Per Defecte: C</li>
+<li>Per Web: Javascript, Node.js</li>
+
+</ul></li>
+<li>Third Party: .NET, Mono, Unity, Erlang
+, Java, JVM
+, LLVM, Malfunction
+, Ocaml, Python
+, PHP, Ruby</li>
+
+</ul>
+
+</section>
+<section id="slide-4-4">
+<h3 id="4-4"><span class="section-number-3">4.4</span> TT</h3>
 </section>
 </section>
 </div>

@@ -1,9 +1,112 @@
 #+TITLE: Llenguatges funcionals
 #+author: Joaquim Picó, Sergi Simón
 #+options: toc:nil
+#+begin_comment
+Quim
+Cas d'estudi Idris
+Context Històric - John Backus
+Idris ..
+Sergi
+Introduccio i cas d'estudi Haskell
+John Backus, Dèu Grec fins a Idris
+#+end_comment
+
 * Introducció
 ** Cas d'estudi Haskell
 ** Cas d'estudi Idris
+#+begin_src idris
+isPalindrome: String -> Bool
+isPalindrome str = str == reverse str
+#+end_src
+#+begin_comment
+Que és Idris?
+- Idris és un llenguatge funcional
+- Dependent types
+  - No hi ha tanta distinció entre tipus i valors
+  - Tipus depenen de valors
+- Llenguatge per a encoratjar el Type Driven Development
+  - Els tipus són eines per a crear els programes. Es defineixen els tipus
+    del nostre programa i s'utilitza el compilador i el type checker per A
+    cosntruir un programa complet que satisfagi el tipus.
+    Com més informació tinguem sobreels tipus, mes seguretat tindrem
+    de que el nostre programa serà correcte.
+
+Sistemes de validació.
+Es mostra un sistema de precondicions i postcondicions a nivell de compilador. El sistema de tipus permet expressar condicions en els paràmetres.
+#+end_comment
+
+* Context Històric
+** 1970~1980
+#+begin_comment
+A nivell acadèmic
+- Lazy
+- Functional
+- Recursive
+- Comprehensions
+- Pattern Matching
+#+end_comment
+** Ordinadors diferents a Von Neumann
+Basats en Càlcul Lambda en comptes de les màquines de Turing
+** No va funcionar
+** 1977 John Backus
+- Fortran
+- ALGOL
+- BNF (Backus-Naur Form)
+#+begin_src text
+<real number> ::= <sign><natural number> |
+                  <sign><natural number>'.'<digit sequence> |
+                  <sign>'.'<digit><digit sequence> |
+                  <sign><real number>'e'<natural number>
+
+#+end_src
+#+begin_comment
+Monstruito
+Diu si ens podem alliberar del MT
+Article alliberar Von Neumann
+
+Fa cosetes amb un llenguatge que es diu F-pi
+
+#+end_comment
+** La crida als llenguatges funcionals
+#+begin_comment
+HASKELL RULES
+FUNCTIONAL PROGRAMMING DOMINARÀ EL MON
+
+HAHHAHAHAHA WE WIN THESE
+#+end_comment
+** Moltes més conferències i llenguatges funcionals
+- Miranda
+- ML
+- Orwell
+- ...
+** Moltes Arquitectures
+#+begin_comment
+No van funcionar comparades amb el PODER DE INTEL.
+#+end_comment
+
+** Molts compiladors
+** Molt de Caos
+#+begin_comment
+tothom fa lo seu.
+#+end_comment
+** Dos organitzacions
+- Lisp and Functional Programming
+- Functional Programming Arquitectures
+Formen
+- Functional Programming and Computing Arquitectures
+#+begin_comment
+Conferència anual que encara es fa.
+
+12 xavalins lazy intentant arribar a un acord per fer un llenguatge
+- Bé per ensenyar
+- Per a fer recerca
+- Aplicacions industrials
+- Sintaxis i Semàntiques formals
+- Open Souce Libre MIT guapo tot
+- Que encapsulin totes les idees correctament
+- Reduir la diversitat innecessaria de llenguatges de programació funcionals.
+#+end_comment
+** Haskell 1
 
 * Haskell
 ** Problemàtica
@@ -70,3 +173,41 @@ En ghc:
 #+end_comment
 
 * Idris
+** Problemàtica
+#+begin_comment
+De mateixa manera que haskell, Idris te visions diferents sobre l'objectiu de la compilació.
+Idirs ha estat disenyat per a poder generar codi per a diferents backends.
+#+end_comment
+- C
+- JavaScript
+- Node.js
+
+** Solució
+#+begin_src dot :file img/lleng-inter2.png :cmdline -Tpng :exports none :results silent
+digraph G {
+
+    Idris -> "Llenguatge Intermedi" -> C;
+    "Llenguatge Intermedi" -> Javascript
+    "Llenguatge Intermedi" -> "Node.js"
+    "Llenguatge Intermedi" -> "Python"
+    "Llenguatge Intermedi" -> "LLVM"
+    "Llenguatge Intermedi" -> "..."
+}
+#+end_src
+
+[[file:img/lleng-inter2.png]]
+
+** Backends
+- Oficials
+  + Per Defecte: C
+  + Per Web: Javascript, Node.js
+- Third Party: .NET, Mono, Unity, Erlang
+  , Java, JVM
+  , LLVM, Malfunction
+  , Ocaml, Python
+  , PHP, Ruby
+
+** TT
+#+begin_comment
+Per això, idirs abans de traduir a un dels backends disponibles, tradueix a un llenguatge intermedi anomenat: TT (perque s'asembla a  la lletra grega pi majuscula).
+#+end_comment

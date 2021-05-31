@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Llenguatges funcionals</title>
+<meta name="author" content="Joaquim Picó, Sergi Simón"/>
+<style type="text/css">
+.underline { text-decoration: underline; }
+</style>
+<link rel="stylesheet" href="/home/sergi/.emacs.d/.local/straight/build-27.2/revealjs/dist/reveal.css"/>
+
+<link rel="stylesheet" href="/home/sergi/.emacs.d/.local/straight/build-27.2/revealjs/dist/theme/black.css" id="theme"/>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide">
+<h1 class="title">Llenguatges funcionals</h1><h2 class="author">Joaquim Picó, Sergi Simón</h2><p class="date">Created: 2021-05-30 Sun 20:54</p>
+</section>
+<section>
+<section id="slide-1">
+<h2 id="1"><span class="section-number-2">1</span> Introducció</h2>
+<div class="outline-text-2" id="text-1">
+</div>
+</section>
+<section id="slide-1-1">
+<h3 id="1-1"><span class="section-number-3">1.1</span> Cas d&rsquo;estudi Haskell</h3>
+</section>
+<section id="slide-1-2">
+<h3 id="1-2"><span class="section-number-3">1.2</span> Cas d&rsquo;estudi Idris</h3>
+
+</section>
+</section>
+<section>
+<section id="slide-2">
+<h2 id="2"><span class="section-number-2">2</span> Haskell</h2>
+<div class="outline-text-2" id="text-2">
+</div>
+</section>
+<section id="slide-2-1">
+<h3 id="2-1"><span class="section-number-3">2.1</span> Problemàtica</h3>
+<p>
+Visions diferents sobre l&rsquo;objectiu de la compilació:
+</p>
+<ul>
+<li>C</li>
+<li>LLVM</li>
+<li>Codi natiu</li>
+
+</ul>
+</section>
+<section id="slide-2-2">
+<h3 id="2-2"><span class="section-number-3">2.2</span> Solució: Llenguatge intermedi</h3>
+
+<div id="org324516d" class="figure">
+<p><img src="img/lleng-inter.png" alt="lleng-inter.png" />
+</p>
+</div>
+</section>
+<section id="slide-2-3">
+<h3 id="2-3"><span class="section-number-3">2.3</span> Cmm</h3>
+<p>
+Neix de C&#x2013;
+</p>
+
+</section>
+<section id="slide-2-4">
+<h3 id="2-4"><span class="section-number-3">2.4</span> Diferencies entre ells</h3>
+</section>
+<section id="slide-2-4-1">
+<h4 id="2-4-1"><span class="section-number-4">2.4.1</span> Codi natiu</h4>
+</section>
+<section id="slide-2-4-2">
+<h4 id="2-4-2"><span class="section-number-4">2.4.2</span> C</h4>
+</section>
+<section id="slide-2-4-3">
+<h4 id="2-4-3"><span class="section-number-4">2.4.3</span> LLVM</h4>
+
+</section>
+</section>
+<section>
+<section id="slide-3">
+<h2 id="3"><span class="section-number-2">3</span> Idris</h2>
+</section>
+</section>
+</div>
+</div>
+<script src="/home/sergi/.emacs.d/.local/straight/build-27.2/revealjs/dist/reveal.js"></script>
+<script src="/home/sergi/.emacs.d/.local/straight/build-27.2/revealjs/plugin/markdown/markdown.js"></script>
+<script src="/home/sergi/.emacs.d/.local/straight/build-27.2/revealjs/plugin/notes/notes.js"></script>
+<script src="/home/sergi/.emacs.d/.local/straight/build-27.2/revealjs/plugin/search/search.js"></script>
+<script src="/home/sergi/.emacs.d/.local/straight/build-27.2/revealjs/plugin/zoom/zoom.js"></script>
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: true,
+progress: true,
+history: false,
+center: true,
+slideNumber: 'c',
+rollingLinks: false,
+keyboard: true,
+mouseWheel: false,
+fragmentInURL: false,
+hashOneBasedIndex: false,
+pdfSeparateFragments: true,
+
+overview: true,
+
+transition: 'convex',
+transitionSpeed: 'default',
+
+// Plugins with reveal.js 4.x
+plugins: [ RevealMarkdown, RevealNotes, RevealSearch, RevealZoom ],
+
+// Optional libraries used to extend reveal.js
+dependencies: [
+]
+
+});
+</script>
+</body>
+</html>

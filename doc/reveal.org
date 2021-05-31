@@ -1,5 +1,6 @@
 #+TITLE: Llenguatges funcionals
-
+#+author: Joaquim Picó, Sergi Simón
+#+options: toc:nil
 * Introducció
 ** Cas d'estudi Haskell
 ** Cas d'estudi Idris
@@ -67,3 +68,5 @@ En ghc:
 - El compilat pot ser més ràpid, sobretot si s'utilitza moltes arrays i nombres (estrany en haskell).
 - Compila molt més lent.
 #+end_comment
+
+* Idris

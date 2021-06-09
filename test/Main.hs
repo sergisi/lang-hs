@@ -12,31 +12,16 @@ import           Control.Monad                  ( when
                                                 , liftM2
                                                 )
 
-testSimplify s exp = testCase s (exp @=? runExpression s)
-
-integersTests = testGroup
-  "Integers tests"
-  [ testSimplify "((2))" $ Right [Right 2]
-  , testSimplify "(2 * 3) + 2" $ Right [Right 8]
-  , testSimplify "(2 * 3) div (4 div 2)" $ Right [Right 3]
-  , testSimplify "(2 * 3) mod (4 div 2)" $ Right [Right 0]
-  , testSimplify "2 * (3 + 2)" $ Right [Right 10]
-  , testSimplify "" $ Right []
-  , testSimplify "a = 2; b = 3; c = a + b; a*b"
-    $ Right [Right 2, Right 3, Right 5, Right 6]
+dataTests = testGroup "Data tests"
+  [ testCase "Normal test" $ expected @=? runExpression "data Ha = Ha Int (Double -> Bool) | Haha;"
+  , testCase "List test" $ expected' @=? runExpression "data List = List Int List | Empty;"
+  , testCase "Name not defined" $ expected'' @=? runExpression "data A = A B"
   ]
+  where
+    expected = Right [DataStatement (DataDef "Ha" [MultDef {multName = "Haha", parameters = []},MultDef {multName = "Ha", parameters = [TypeInt,TypeFun [TypeDef "Double",TypeBool]]}])]
+    expected' = Right [DataStatement (DataDef "List" [MultDef {multName = "Empty", parameters = []},MultDef {multName = "List", parameters = [TypeInt,TypeDef "List"]}])]
+    expected'' = Left "error"
 
-realTests = testGroup
-  "Reals tests"
-  [ testSimplify "3.2 + 4.3" $ Right [Left 7.5]
-  , testSimplify "1.5 * 2.0" $ Right [Left 3.0]
-  , testSimplify "4.5 / 2.25" $ Right [Left 2.0]
-  ]
-
-castTests = testGroup
-  "Cast Tests"
-  [testSimplify "a = int 3.2; B = real 3" $ Right [Right 3, Left 3]]
-
-tests = testGroup "Tests" [integersTests, realTests, castTests]
+tests = testGroup "Tests" [dataTests]
 
 main = defaultMain tests

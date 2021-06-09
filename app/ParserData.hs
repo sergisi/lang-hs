@@ -1,10 +1,7 @@
--- | Module where it contains the Parser data, as it will need GADTS
-module ParserData
-  ( Exp(..)
-  )
-where
+-- | Module where it contains the Parser data
+-- This module shouldn't have anything to execute, only define the data.
+module ParserData where
 
-import           AlexUserState
 import qualified Data.Map.Strict               as Map
 import           Lens.Micro
 import           Lexer
@@ -12,7 +9,33 @@ import           Data.Bits
 
 type Val = Either Double Int
 
-data Exp = TSum Exp Exp
+type Name = String
+
+-- | Type
+data DataType =
+  TypeBool
+  | TypeInt
+  | TypeReal
+  | TypeDef Name
+  | TypeFun [DataType]
+  deriving (Show, Eq, Ord, Read)
+
+data MultDef = MultDef { multName :: Name
+                       -- | It's either named or unnamed.
+                       , parameters :: [DataType]
+                       }
+      deriving (Show, Eq, Ord, Read)
+
+-- | Data constructor. First parameter
+data DataDef = DataDef Name [MultDef] -- ^ Sum types
+  deriving (Show, Eq, Ord, Read)
+
+data Exp = TNone
+  -- | Assign Expressions
+  | DataStatement DataDef
+  | DefFunc Name Exp Exp
+  -- | Math expressions
+  | TSum Exp Exp
   | TMinus Exp Exp
   | TMult Exp Exp
   | TDiv Exp Exp
@@ -35,7 +58,6 @@ data Exp = TSum Exp Exp
   | TXor Exp Exp 
   | TIntToReal Exp
   | TRealToInt Exp
-  | TNone
   deriving (Show, Read, Eq, Ord)
 {-
 {-- | Evaluates GADT mantaining the state

@@ -58,6 +58,7 @@ Basats en Càlcul Lambda en comptes de les màquines de Turing
                   <sign>'.'<digit><digit sequence> |
                   <sign><real number>'e'<natural number>
 
+Can  Programming Be Liberated from the von Neumann Style? A Functional Style and Its Algebra of Programs
 #+end_src
 #+begin_comment
 Monstruito
@@ -208,6 +209,9 @@ digraph G {
   , PHP, Ruby
 
 ** TT
+
 #+begin_comment
 Per això, idirs abans de traduir a un dels backends disponibles, tradueix a un llenguatge intermedi anomenat: TT (perque s'asembla a  la lletra grega pi majuscula).
 #+end_comment
+
+* Gràcies per la vostra atenció

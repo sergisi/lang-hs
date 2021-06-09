@@ -8,4 +8,4 @@ main :: IO ()
 main =
   do
     s <- getContents
-    print $ runAlex s calc
+    print $ runExpression s

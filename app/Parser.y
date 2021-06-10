@@ -24,6 +24,7 @@ import SyntaxAnalysis
    real      { LDouble $$ }
    bool      { LBool $$ }
    name      { LVar $$ }
+   char      { LChar $$ }
    ';'       { LSync }
    '='       { LAssign }
    '%'       { LMod }
@@ -41,6 +42,7 @@ import SyntaxAnalysis
    "Real"    { LDefReal }
    "Int"     { LDefInt }
    "Bool"    { LDefBool }
+   "Char"    { LDefChar }
    "->"      { LDefFunc }
    "data"    { LData }
    "return"  { LReturn }
@@ -87,6 +89,7 @@ Type :: { Alex DataType }
 Type : "Real"      { return TypeReal }
      | "Int"       { return TypeInt }
      | "Bool"      { return TypeBool }
+     | "Char"      { return TypeChar }
      | name        { defineTypeName $1}
      | '(' Fun ')' { fmap (TypeFun . reverse) . sequenceA $ $2 }
 

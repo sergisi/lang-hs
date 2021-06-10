@@ -59,3 +59,14 @@ defineTypeName name = let def = TypeDef name in do
   if b
     then return def
     else strError $ "name " ++ name ++ " is not defined at " ++ show (s ^. definitions)
+
+defineValue :: Name -> Alex DataType -> Exp -> Alex Exp
+defineValue name dtype' def = do
+  dataType <- dtype'
+  s <- alexGetUserState
+  alexSetUserState $
+    over values
+    -- TODO canviar el valor generat.
+    (\(x:xs) -> Map.insert name (Value dataType Nothing) x : xs)
+    s
+  return def

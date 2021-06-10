@@ -31,6 +31,7 @@ $white+    { skip }
 \)              { tk LRBrack }
 "div"           { tk LDivInt }
 "mod"           { tk LMod }
+'.'             { token $ \(_, _, _, (x:y:xs)) len -> LChar y }
 -- ">>"            { tk LRightShift }
 -- "<<"            { tk LLeftShift }
 -- \~              { tk LCompAUn }
@@ -44,6 +45,7 @@ $white+    { skip }
 "Real"          { tk LDefReal }
 "Int"           { tk LDefInt }
 "Bool"          { tk LDefBool }
+"Char"          { tk LDefChar }
 "->"            { tk LDefFunc }
 "::"            { tk LTypeDef }
 "case"          { tk LCase }
@@ -62,15 +64,16 @@ tk = token . const . const
 data LexerT = LMult
             | LDiv
             | LMod
-            | LVar String
             | LDivInt
             | LSum
             | LMinus
             | LLBrack
             | LRBrack
             | LInt Int
+            | LVar String
             | LDouble Double
             | LBool Bool
+            | LChar Char
             | LSync
             | LEOF
             | LAssign
@@ -84,6 +87,7 @@ data LexerT = LMult
             | LDefInt
             | LDefBool
             | LDefFunc
+            | LDefChar
             | LCase
             | LOpenDef
             | LCloseDef

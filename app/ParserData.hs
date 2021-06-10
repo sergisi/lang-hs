@@ -17,6 +17,7 @@ data DataType =
   TypeBool
   | TypeInt
   | TypeReal
+  | TypeChar
   | TypeDef Name
   | TypeFun [DataType]
   deriving (Show, Eq, Ord, Read)

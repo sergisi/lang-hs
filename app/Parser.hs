@@ -2,6 +2,7 @@
 module Parser where
 import Lexer
 import ParserData
+import SyntaxAnalysis
 import qualified Data.Array as Happy_Data_Array
 import qualified Data.Bits as Bits
 import Control.Applicative(Applicative(..))
@@ -14,10 +15,10 @@ data HappyAbsSyn
 	| HappyErrorToken Prelude.Int
 	| HappyAbsSyn4 ([ Exp ])
 	| HappyAbsSyn5 (Exp)
-	| HappyAbsSyn6 ([MultDef])
-	| HappyAbsSyn7 (MultDef)
-	| HappyAbsSyn8 ([DataType])
-	| HappyAbsSyn9 (DataType)
+	| HappyAbsSyn6 ([Name -> Alex MultDef])
+	| HappyAbsSyn7 (Name -> Alex MultDef)
+	| HappyAbsSyn8 ([Alex DataType])
+	| HappyAbsSyn9 (Alex DataType)
 
 {- to allow type-synonyms as our monads (likely
  - with explicitly-specified bind and return)
@@ -423,15 +424,14 @@ happyReduction_4  =  HappyAbsSyn4
 		 ([]
 	)
 
-happyReduce_5 = happyReduce 4 5 happyReduction_5
+happyReduce_5 = happyMonadReduce 4 5 happyReduction_5
 happyReduction_5 ((HappyAbsSyn6  happy_var_4) `HappyStk`
 	_ `HappyStk`
 	(HappyTerminal (LVar happy_var_2)) `HappyStk`
 	_ `HappyStk`
-	happyRest)
-	 = HappyAbsSyn5
-		 (DataStatement $ DataDef happy_var_2 happy_var_4
-	) `HappyStk` happyRest
+	happyRest) tk
+	 = happyThen ((( defineData happy_var_2 happy_var_4))
+	) (\r -> happyReturn (HappyAbsSyn5 r))
 
 happyReduce_6 = happyReduce 5 5 happyReduction_6
 happyReduction_6 (_ `HappyStk`
@@ -463,7 +463,7 @@ happyReduction_8 _  = notHappyAtAll
 happyReduce_9 = happySpecReduce_1  7 happyReduction_9
 happyReduction_9 (HappyTerminal (LVar happy_var_1))
 	 =  HappyAbsSyn7
-		 (MultDef happy_var_1 []
+		 (defineConstructor happy_var_1 []
 	)
 happyReduction_9 _  = notHappyAtAll 
 
@@ -471,7 +471,7 @@ happyReduce_10 = happySpecReduce_2  7 happyReduction_10
 happyReduction_10 (HappyAbsSyn8  happy_var_2)
 	(HappyTerminal (LVar happy_var_1))
 	 =  HappyAbsSyn7
-		 (MultDef happy_var_1 $ reverse happy_var_2
+		 (defineConstructor happy_var_1 happy_var_2
 	)
 happyReduction_10 _ _  = notHappyAtAll 
 
@@ -493,25 +493,25 @@ happyReduction_12 _ _  = notHappyAtAll
 happyReduce_13 = happySpecReduce_1  9 happyReduction_13
 happyReduction_13 _
 	 =  HappyAbsSyn9
-		 (TypeReal
+		 (return TypeReal
 	)
 
 happyReduce_14 = happySpecReduce_1  9 happyReduction_14
 happyReduction_14 _
 	 =  HappyAbsSyn9
-		 (TypeInt
+		 (return TypeInt
 	)
 
 happyReduce_15 = happySpecReduce_1  9 happyReduction_15
 happyReduction_15 _
 	 =  HappyAbsSyn9
-		 (TypeBool
+		 (return TypeBool
 	)
 
 happyReduce_16 = happySpecReduce_1  9 happyReduction_16
 happyReduction_16 (HappyTerminal (LVar happy_var_1))
 	 =  HappyAbsSyn9
-		 (TypeDef happy_var_1
+		 (defineTypeName happy_var_1
 	)
 happyReduction_16 _  = notHappyAtAll 
 
@@ -520,7 +520,7 @@ happyReduction_17 _
 	(HappyAbsSyn8  happy_var_2)
 	_
 	 =  HappyAbsSyn9
-		 (TypeFun $ reverse happy_var_2
+		 (fmap (TypeFun . reverse) . sequenceA $ happy_var_2
 	)
 happyReduction_17 _ _ _  = notHappyAtAll 
 
@@ -871,10 +871,9 @@ calc = happySomeParser where
 happySeq = happyDontSeq
 
 
-happyError :: LexerT -> Alex a
-happyError tok = alexError $ "Happy error on token: " ++ show tok
-
 runExpression s = runAlex s calc
+
+runExpression' s = runAlex s (calc *> alexGetUserState)
 {-# LINE 1 "templates/GenericTemplate.hs" #-}
 -- $Id: GenericTemplate.hs,v 1.26 2005/01/14 14:47:22 simonmar Exp $
 

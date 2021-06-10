@@ -2,6 +2,7 @@
 module Parser where
 import Lexer
 import ParserData
+import SyntaxAnalysis
 }
 
 %name calc
@@ -60,19 +61,19 @@ Line : Line ';' Assign { $3 : $1 }
      | {- empty -}     { [] }
 
 Assign :: { Exp }
-Assign : "data" name '=' DataDef { DataStatement $ DataDef $2 $4 }
-       | name "::" Type '=' Def   { TNone }
+Assign : "data" name '=' DataDef {% defineData $2 $4 }
+       | name "::" Type '=' Def  { TNone }
 
-DataDef :: { [MultDef] }
+DataDef :: { [Name -> Alex MultDef] }
 DataDef : DataDef '|' MultType { $3 : $1 }
         | MultType             { [$1] }
 
-MultType :: { MultDef }
-MultType : name                           { MultDef $1 [] }
-         | name ListOfFuns                { MultDef $1 $ reverse $2 }
+MultType :: { Name -> Alex MultDef }
+MultType : name                           { defineConstructor $1 [] }
+         | name ListOfFuns                { defineConstructor $1 $2 }
          -- | name '{' NamedMultType '}'     { MultDef $1 . Right $ reverse $3 }
 
-ListOfFuns :: { [DataType] }
+ListOfFuns :: { [Alex DataType] }
 ListOfFuns : Type                { [$1] }
            | ListOfFuns Type     { $2 : $1 }
 
@@ -82,14 +83,14 @@ NamedMultType : NamedMultType ',' name "::" Type    { ($3, $5) : $1 }
               | name "::" Type                      { [($1, $3)] }
 -}
 
-Type :: { DataType }
-Type : "Real"      { TypeReal }
-     | "Int"       { TypeInt }
-     | "Bool"      { TypeBool }
-     | name        { TypeDef $1 } -- TODO make a monad read or error.
-     | '(' Fun ')' { TypeFun $ reverse $2 }
+Type :: { Alex DataType }
+Type : "Real"      { return TypeReal }
+     | "Int"       { return TypeInt }
+     | "Bool"      { return TypeBool }
+     | name        { defineTypeName $1}
+     | '(' Fun ')' { fmap (TypeFun . reverse) . sequenceA $ $2 }
 
-Fun :: { [DataType] }
+Fun :: { [Alex DataType] }
 Fun : Fun "->" Type { $3 : $1 }
     | Type          { [$1] }
 
@@ -150,9 +151,7 @@ MathExp : MathExp '+'   MathExp   { TSum $1 $3 }
 {
 
 
-happyError :: LexerT -> Alex a
-happyError tok = alexError $ "Happy error on token: " ++ show tok
-
 runExpression s = runAlex s calc
 
+runExpression' s = runAlex s (calc *> alexGetUserState)
 }

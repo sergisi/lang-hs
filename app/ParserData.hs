@@ -1,10 +1,11 @@
 -- | Module where it contains the Parser data
 -- This module shouldn't have anything to execute, only define the data.
+{-# LANGUAGE TemplateHaskell #-}
 module ParserData where
 
 import qualified Data.Map.Strict               as Map
 import           Lens.Micro
-import           Lexer
+import           Lens.Micro.TH
 import           Data.Bits
 
 type Val = Either Double Int
@@ -59,6 +60,7 @@ data Exp = TNone
   | TIntToReal Exp
   | TRealToInt Exp
   deriving (Show, Read, Eq, Ord)
+
 {-
 {-- | Evaluates GADT mantaining the state
 -- This functions lets avaluate an Alex (Exp a) to an

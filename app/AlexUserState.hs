@@ -6,34 +6,23 @@ module AlexUserState where
 import qualified Data.Map.Strict               as Map
 import           Lens.Micro
 import           Lens.Micro.TH
+import           ParserData
 
-data TypeDefinition = DBool
-                | DInt
-                | DChar
-                | DUnit
-                | DNothing
-                | DFunction [TypeDefinition]
-                | DMult [TypeDefinition]         -- ^ Mult Type. Maybe use a Map.String Definition
-                | DSum (Map.Map String TypeDefinition) -- ^ Sum Type
-                deriving (Ord, Eq, Show, Read)
+data Value = Value { _dataType :: DataType
+                   , _value :: Maybe Val -- ^ Nothing represents bottom or undefined
+                   }
+             deriving (Show, Eq, Ord, Read)
 
-data ValueDefinition = VBool Bool
-      | VInt Int
-      | VChar Char
-      deriving (Ord, Eq, Show, Read)
+makeLenses ''Value
 
-data Definition = Definition { _type :: TypeDefinition
-                             , _value :: Maybe ValueDefinition -- ^ Nothing represents bottom or undefined
-                             }
-                | TypeD { _typeD :: TypeDefinition }
-
-newtype AlexUserState = AlexUserState
+data AlexUserState = AlexUserState
   { -- | Definitions map. Contains all definition in a point
-    _definitions :: [Map.Map String Definition]
+    _values :: [Map.Map String Value]
+  , _definitions :: [Map.Map String DataDef]
   }
+  deriving (Show, Eq, Ord, Read)
 
 makeLenses ''AlexUserState
 
 alexInitUserState :: AlexUserState
-alexInitUserState = AlexUserState [Map.empty]
-
+alexInitUserState = AlexUserState [Map.empty] [Map.empty]

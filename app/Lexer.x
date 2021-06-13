@@ -9,15 +9,19 @@ module Lexer
   , alexGetUserState
   , alexSetUserState
   , getLineAndColumn
+  , getRef
   ) where
 
 import AlexUserState
+import Lens.Micro
 }
 
 %wrapper "monadUserState"
 
 @names = [a-zA-Z][a-zA-Z0-9]*
-
+@boolAnd = ("&&")|"∧"
+@boolOr = ("||")|"∨"
+@boolNot = ("!" )|"¬"
 tokens :-
 
 $white+    { skip }
@@ -27,16 +31,26 @@ $white+    { skip }
 \/              { tk LDiv }
 \+              { tk LSum }
 \-              { tk LMinus }
+
 \(              { tk LLBrack }
 \)              { tk LRBrack }
 "div"           { tk LDivInt }
 "mod"           { tk LMod }
 '.'             { token $ \(_, _, _, (x:y:xs)) len -> LChar y }
--- ">>"            { tk LRightShift }
--- "<<"            { tk LLeftShift }
--- \~              { tk LCompAUn }
--- \&              { tk LAnd }
--- \^              { tk LXor }
+"=="            { tk LEq }
+"!="            { tk LNeq }
+"<"             { tk LLess }
+"<="            { tk LLessEq }
+">"             { tk LGreater }
+">="            { tk LGreaterEq }
+@boolAnd        { tk LBoolAnd }
+@boolOr         { tk LBoolOr }
+@boolNot        { tk LBoolNot }
+">>"            { tk LRightShift }
+"<<"            { tk LLeftShift }
+\~              { tk LCompAUn }
+\&              { tk LAnd }
+\^              { tk LXor }
 \{              { tk LOpenDef }
 \}              { tk LCloseDef }
 "true"          { tk $ LBool True }
@@ -96,6 +110,15 @@ data LexerT = LMult
             | LData
             | LSumType
             | LComma
+            | LEq
+            | LNeq
+            | LLess
+            | LLessEq
+            | LGreater
+            | LGreaterEq
+            | LBoolAnd
+            | LBoolOr
+            | LBoolNot
             deriving (Show, Eq, Read, Ord)
 
 scanner str = fmap reverse . runAlex str $ loop []
@@ -119,9 +142,17 @@ lexWrapper = (alexMonadScan >>=)
 getLineAndColumn :: Alex (Int, Int)
 getLineAndColumn = Alex $ \s@AlexState{alex_pos=pos} -> let (AlexPn _ line column) = pos in Right (s, (line, column))
 
+getRef :: Alex String
+getRef = do
+  s <- alexGetUserState
+  alexSetUserState $ over tempRefs tail s
+  return . head $ s ^. tempRefs
+
 mainOther :: IO ()
 mainOther = do
   s <- getContents
   print $ scanner s
+
+
 
 }

@@ -122,3 +122,65 @@ RET r1
 Forma de fer-ho, començar per sota i mantenir quines variables s'han necessitat fins ara.
 
 Problema, com fem amb els ifs?
+
+### Code 3@
+Exemples de codi de tres adreces
+
+```
+a=f(v1, v2, v3);
+------
+param v3
+param v2
+param v1
+call f
+
+a := $SP
+
+===== 
+
+int t1[5];
+t1[3]=4;
+----
+t1 @ 0 + 3 * 2 = 4 
+
+===== 
+
+if var then code else code (etiq2)
+
+if false temp3 goto etiq2
+
+
+=====
+
+Func f
+    b := param 1
+    c := param 2
+    a @ 0 = ( b := c * d )
+    a @ 8 = ( t := b + 1 )
+    a @ 16 = ( return t )
+    return a
+
+=====
+
+Func f
+    b := param 1
+    c := param 2
+    d := b + c
+    return d
+  
+Func g
+    t := param 1
+    a := param 2
+    param a
+    param 2
+    call t
+    return $SP
+
+Func main
+    param f
+    param 5
+    call g
+    ret := $SP
+    halt
+```
+

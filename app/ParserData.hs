@@ -1,20 +1,30 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+
 -- | Module where it contains the Parser data
 -- This module shouldn't have anything to execute, only define the data.
-{-# LANGUAGE TemplateHaskell #-}
 module ParserData where
 
-import qualified Data.Map.Strict               as Map
-import           Lens.Micro
-import           Lens.Micro.TH
-import           Data.Bits
+import Data.Bits
+import qualified Data.Map.Strict as Map
+import Lens.Micro
+import Lens.Micro.TH
+
+class Repr a where
+  repr :: a -> String
+
+instance Repr Int where
+  repr = show
 
 type Val = Either Double Int
 
 type Name = String
 
+
 -- | Type
-data DataType =
-  TypeBool
+data DataType
+  = TypeBool
   | TypeInt
   | TypeReal
   | TypeChar
@@ -22,249 +32,253 @@ data DataType =
   | TypeFun [DataType]
   deriving (Show, Eq, Ord, Read)
 
-data MultDef = MultDef { multName :: Name
-                       -- | It's either named or unnamed.
-                       , parameters :: [DataType]
-                       }
-      deriving (Show, Eq, Ord, Read)
+-- TODO posar el nombre de bytes correctes.
+sizeof :: DataType -> Int
+sizeof x = case x of
+  TypeBool -> 1
+  TypeInt -> 2
+  TypeReal -> 3
+  TypeChar -> 1
+  TypeDef _ -> 1
+  TypeFun _ -> 1
 
--- | Data constructor. First parameter
-data DataDef = DataDef Name [MultDef] -- ^ Sum types
+data MultDef = MultDef
+  { multName :: Name,
+    -- | It's either named or unnamed.
+    parameters :: [DataType]
+  }
   deriving (Show, Eq, Ord, Read)
 
-data Exp = TNone
-  -- | Assign Expressions
-  | DataStatement DataDef
-  | DefFunc Name Exp Exp
-  -- | Math expressions
-  | TSum Exp Exp
-  | TMinus Exp Exp
-  | TMult Exp Exp
-  | TDiv Exp Exp
-  | TDivInt Exp Exp
-  | TLeftShift Exp Exp
-  | TRightShift Exp Exp
-  | TVal Int
-  | TRealVal Double
-  | TBrack Exp
-  | TRealAssign Char Exp
-  | TIntAssign Char Exp
-  | TRealGet Char
-  | TIntGet Char
-  | TMod Exp Exp
-  | TNegate Exp
-  | TPositive Exp
-  | TCompAUn Exp
-  | TAnd Exp Exp
-  | TOr Exp Exp
-  | TXor Exp Exp 
-  | TIntToReal Exp
-  | TRealToInt Exp
+-- | Data constructor. First parameter
+data DataDef
+  = -- | Sum types
+    DataDef Name [MultDef]
+  deriving (Show, Eq, Ord, Read)
+
+data Parameter
+  = ParamInt TacInt [ThreeAddressCode]
+  | ParamReal TacReal [ThreeAddressCode]
+  | ParamBool TacBool [ThreeAddressCode]
+  | ParamName String DataType
   deriving (Show, Read, Eq, Ord)
 
-{-
-{-- | Evaluates GADT mantaining the state
--- This functions lets avaluate an Alex (Exp a) to an
--- Alex a using GADTs powerful type system.
---
--- # Examples of usage
--- >>> runAlex "" $ eval . return $ TVal 3
---
--- >>> runAlex "" $ const alexGetUserState =<< (eval $ return $ TIntAssign 'a' $ TSum (TVal 3) (TVal 4))
--}
-eval :: Exp -> Alex Val
-eval outer =
-  case outer of
-    TSum ea eb -> do
-      a <- eval ea
-      b <- eval eb
-      liftOperator (+) (+) a b
-    TMinus ea eb -> do
-      a <- eval ea
-      b <- eval eb
-      liftOperator (-) (-) a b
-    TMult ea eb -> do
-      a <- eval ea
-      b <- eval eb
-      liftOperator (*) (*) a b
-    TDiv ea eb -> do
-      a <- eval ea
-      b <- eval eb
-      ifBothLeft (/) a b
-    TVal a -> return $ Right a
-    TRealVal a -> return $ Left a
-    TBrack a -> eval  a
-    TRealAssign c expDouble -> do
-      s <- alexGetUserState
-      b' <- eval expDouble
-      case b' of
-        Left b -> do
-                  alexSetUserState $ over reals (Map.insert c b) s
-                  return $ Left b
-        Right _ -> do
-                   (line, column) <- getLineAndColumn
-                   alexError $ "Trying to assign integer at double variable at " ++ show line ++ ':': show column
-    TIntAssign c expInt -> do
-      s <- alexGetUserState
-      b' <- eval expInt
-      case b' of
-        Right b -> do
-                  alexSetUserState $ over integers (Map.insert c b) s
-                  return $ Right b
-        Left _ -> do
-                   (line, column) <- getLineAndColumn
-                   alexError $ "Trying to assign double at integer variable at " ++ show line ++ ':': show column
-    TRealGet c -> do
-      s <- alexGetUserState
-      if c `Map.member` (s ^. reals)
-        then return . Left $ (s ^. reals) Map.! c
-        else do
-          (line, column) <- getLineAndColumn
-          alexError $ "Character "
-                      ++ show c
-                      ++ " is not a part of the real definitions  now: "
-                      ++ show (s ^. reals)
-                      ++ ", at" ++ show line ++ ':': show column
-    TIntGet c -> do
-      s <- alexGetUserState
-      if c `Map.member` (s ^. integers)
-        then return . Right $ (s ^. integers) Map.! c
-        else do
-          (line, column) <- getLineAndColumn
-          alexError $ "Character "
-                      ++ show c
-                      ++ " is not a part of the integers definitions now: "
-                      ++ show (s ^. integers)
-                      ++ ", at" ++ show line ++ ':': show column
-    TMod exp exp' -> do
-      a <- eval exp
-      b <- eval exp'
-      ifBothRights mod a b
-    TNegate exp -> do
-      a <- eval exp
-      return $ fmap negate a
-    TPositive exp -> eval exp
-    TRightShift exp exp' -> do
-      a <- eval exp
-      b <- eval exp'
-      ifBothRights  shiftR a b
-    TLeftShift exp exp' -> do
-      a <- eval exp
-      b <- eval exp'
-      ifBothRights shiftL a b
-    TCompAUn exp -> do
-      a <- eval exp
-      ifIsRight complement a
-    TAnd exp exp' -> do
-      a <- eval exp
-      b <- eval exp'
-      ifBothRights (.&.) a b
-    TOr exp exp' -> do
-      a <- eval exp
-      b <- eval exp'
-      ifBothRights (.|.) a b
-    TXor exp exp' -> do
-      a <- eval exp
-      b <- eval exp'
-      ifBothRights xor a b
-    TIntToReal exp -> do
-      a <- eval exp
-      intToreal a
-    TRealToInt exp -> do
-      a <- eval exp
-      realToInt a
-    TDivInt exp exp' -> do
-      a <- eval exp
-      b <- eval exp'
-      ifBothRights div a b 
+getType :: Parameter -> DataType
+getType p = case p of
+  ParamInt _ _ -> TypeInt
+  ParamBool _ _ -> TypeBool
+  ParamReal _ _ -> TypeReal
 
-realToInt :: Val -> Alex Val
-realToInt (Left a) = return . Right $ floor a  
-realToInt _ = do
-  (line, column) <- getLineAndColumn
-  alexError
-    $ "Cannot apply cast from int to int, the expression is not a real "
-    ++ show line
-    ++ ':'
-    :  show column
+getCode :: Parameter -> [ThreeAddressCode]
+getCode p = case p of
+  ParamInt _ xs -> xs
+  ParamBool _ xs -> xs
+  ParamReal _ xs -> xs
 
-intToreal :: Val -> Alex Val
-intToreal (Right a) = return . Left $ fromIntegral a
-intToreal _ = do
-  (line, column) <- getLineAndColumn
-  alexError
-    $ "Cannot apply cast from real to real, the expression is not an int "
-    ++ show line
-    ++ ':'
-    :  show column
+-- TODO  is this even possible.
+paramToRef :: Parameter -> Ref
+paramToRef p = case p of
+    ParamInt TacInt [ThreeAddressCode]
+    ParamReal TacReal [ThreeAddressCode]
+    ParamBool TacBool [ThreeAddressCode]
+    ParamName String DataType
 
--- | Lifts two operators at a value level
--- ===Exemple
--- >>> runAlex "" $ liftOperator (+) (+) (Left 3) (Left 3)
--- Right (Left 6)
-liftOperator
-  :: (Int -> Int -> Int)
-  -> (Double -> Double -> Double)
-  -> Val
-  -> Val
-  -> Alex Val
-liftOperator _ f (Left  x) (Left  y) = return . Left $ f x y
-liftOperator f _ (Right x) (Right y) = return . Right $ f x y
-liftOperator _ _ _         _         = do
-  (line, column) <- getLineAndColumn
-  alexError
-    $ "Cannot apply operator between doubles and integers. Please cast to either one of them! At "
-    ++ show line
-    ++ ':'
-    :  show column
 
--- | Lifts one operator if both are integers
--- ===Exemple
--- >>> runAlex "" $ ifBothRights (+) (Right 3) (Right 3)
--- Right (Right 6)
-ifBothRights :: (Int -> Int -> Int) -> Val -> Val -> Alex Val
-ifBothRights f (Right x) (Right y) = return . Right $ f x y
-ifBothRights _ _         _         = do
-  (line, column) <- getLineAndColumn
-  alexError
-    $ "Cannot apply operator between doubles and integers. Please cast to either one of them! At "
-    ++ show line
-    ++ ':'
-    :  show column
+-- TODO Delete
+data Exp
+  = TNone
+  | -- | Assign Expressions
+    DataStatement DataDef
+  | DefFunc Name Exp Exp
+  deriving (Show, Read, Eq, Ord)
 
--- | Lifts one operator if the argument is an integer
--- ===Exemple
--- >>> runAlex "" $ ifBothRights (+) (Right 3)
--- Right (Right 3)
-ifIsRight :: (Int -> Int) -> Val -> Alex Val
-ifIsRight f (Right x) = return . Right $ f x
-ifIsRight _ _ = do
-  (line, column) <- getLineAndColumn
-  alexError $ "Cannot apply operator to any other type that isn't Int "
-            ++ show line ++ ':': show column
+data IntOp
+  = IntOpSum
+  | IntOpMult
+  | IntOpMinus
+  | IntOpDiv
+  | IntOpLeftShift
+  | IntOpRightShift
+  | IntOpMod
+  | IntOpEq
+  | IntOpNeq
+  | IntOpLt
+  | IntOpLEq
+  | IntOpGt
+  | IntOpGEq
+  | IntOpBitAnd
+  | IntOpBitOr
+  | IntOpBitXOR
+  deriving (Show, Read, Eq, Ord)
 
--- | Lifts one operator if the argument is a Double
--- ===Exemple
--- >>> runAlex "" $ ifBothRights (+) (Right 3.5)
--- Right (Right 3.5)
-ifIsLeft :: (Double -> Double) -> Val -> Alex Val
-ifIsLeft f (Left x) = return . Left $ f x
-ifIsLeft _ _ = do
-  (line, column) <- getLineAndColumn
-  alexError $ "Cannot apply operator to any other type that isn't Double"
-            ++ show line ++ ':': show column
+data RealOp
+  = RealOpSum
+  | RealOpMult
+  | RealOpMinus
+  | RealOpDiv
+  | RealOpEq
+  | RealOpNeq
+  | RealOpLt
+  | RealOpLEq
+  | RealOpGt
+  | RealOpGEq
+  deriving
+    ( Show,
+      Read,
+      Eq,
+      Ord
+    )
 
--- | Lifts one operator if both are doubles
--- ===Exemple
--- >>> runAlex "" $ ifBothLeft (+) (Right 3) (Right 3)
--- Right (Left 6)
-ifBothLeft :: (Double -> Double -> Double) -> Val -> Val -> Alex Val
-ifBothLeft f (Left x) (Left y) = return . Left $ f x y
-ifBothLeft _ _        _        = do
-  (line, column) <- getLineAndColumn
-  alexError
-    $ "Cannot apply operator between doubles and integers. Please cast to either one of them! At "
-    ++ show line
-    ++ ':'
-    :  show column
--}
+data BoolOp = BoolOpOr | BoolOpAnd | BoolOpXOR | BoolOpEq | BoolOpNeq
+  deriving (Show, Read, Eq, Ord)
+
+instance Repr IntOp where
+  repr op = case op of
+    IntOpSum -> "+"
+    IntOpMult -> "*"
+    IntOpMinus -> "-"
+    IntOpDiv -> "//"
+    IntOpLeftShift -> "<<"
+    IntOpRightShift -> ">>"
+    IntOpMod -> "%"
+    IntOpEq -> "=="
+    IntOpNeq -> "!="
+    IntOpLt -> "<"
+    IntOpLEq -> "<="
+    IntOpGt -> ">"
+    IntOpGEq -> ">="
+    IntOpBitAnd -> "&"
+    IntOpBitOr -> "|"
+    IntOpBitXOR -> "^"
+
+instance Repr RealOp where
+  repr op = case op of
+    RealOpSum -> "+"
+    RealOpMult -> "*"
+    RealOpMinus -> "-"
+    RealOpDiv -> "/"
+    RealOpEq -> "=="
+    RealOpNeq -> "!="
+    RealOpLt -> "<"
+    RealOpLEq -> "<="
+    RealOpGt -> ">"
+    RealOpGEq -> ">="
+
+instance Repr BoolOp where
+  repr op = case op of
+    BoolOpOr -> "||"
+    BoolOpXOR -> "XOR"
+    BoolOpAnd -> "&&"
+    BoolOpEq -> "=="
+    BoolOpNeq -> "!="
+
+data UnaryIntOp = UnaryIntMinus | UnaryIntComplement
+  deriving (Show, Eq, Read, Ord)
+
+data UnaryRealOp = UnaryRealMinus
+  deriving (Show, Eq, Read, Ord)
+
+data UnaryBoolOp = UnaryBoolNot
+  deriving (Show, Eq, Read, Ord)
+
+instance Repr UnaryIntOp where
+  repr op = case op of
+    UnaryIntMinus -> "-"
+    UnaryIntComplement -> "~"
+
+instance Repr UnaryRealOp where
+  repr _ = "-"
+
+instance Repr UnaryBoolOp where
+  repr _ = "¬"
+
+data Ref
+  = RefVar String
+  | RefInf String Int
+  | RefInt TacInt
+  | RefReal TacReal
+  | RefBool TacBool
+  | RefSP
+  | RefFunc Name [DataType]
+  deriving (Show, Eq, Read, Ord)
+
+instance Repr Ref where
+  repr a = case a of
+    RefVar ref -> ref
+    RefInf ref i -> ref ++ " @ " ++ show i
+    RefInt r -> repr r
+    RefReal r -> repr r
+    RefBool r -> repr r
+    RefSP -> "$SP"
+
+data TacReal = ConstantReal Double | RealRef Ref
+  deriving (Show, Eq, Read, Ord)
+
+data TacInt = ConstantInt Int | IntRef Ref
+  deriving (Show, Eq, Read, Ord)
+
+data TacBool = ConstantBool Bool | BoolRef Ref
+  deriving (Show, Eq, Read, Ord)
+
+instance Repr TacBool where
+  repr v = case v of
+    ConstantBool b -> show b
+    BoolRef ref -> repr ref
+
+instance Repr TacInt where
+  repr v = case v of
+    ConstantInt i -> show i
+    IntRef ref -> repr ref
+
+instance Repr TacReal where
+  repr v = case v of
+    ConstantReal d -> show d
+    RealRef ref -> repr ref
+
+instance Repr String where
+  repr = id
+
+type Label = String
+
+data ThreeAddressCode
+  = TacHalt
+  | -- | Math expressions
+    TacIntOp Ref TacInt IntOp TacInt
+  | TacRealOp Ref TacReal RealOp TacReal
+  | TacBoolOp Ref TacBool BoolOp TacBool
+  | TacBoolCopy Ref TacBool
+  | TacIntCopy Ref TacInt
+  | TacRealCopy Ref TacReal
+  | TacIntUnary Ref UnaryIntOp TacInt
+  | TacBoolUnary Ref UnaryBoolOp TacBool
+  | TacRealUnary Ref UnaryRealOp TacReal
+  | TacLabel Label
+  | TacFuncLabel Label
+  | TacGetParam Ref Int
+  | TacPushParam Ref
+  | TacIfExp Ref Label
+  | TacReturn Ref
+  | TacCall Name
+  deriving (Show, Eq, Ord, Read)
+
+prefix :: String
+prefix = replicate 4 ' '
+
+instance Repr ThreeAddressCode where
+  repr v = case v of
+    TacHalt -> "halt"
+    TacIntOp r a op b -> prefix ++ repr r ++ " := " ++ repr a ++ " " ++ repr op ++ " " ++ repr b
+    TacRealOp r a op b -> prefix ++ repr r ++ " := " ++ repr a ++ " " ++ repr op ++ " " ++ repr b
+    TacBoolOp r a op b -> prefix ++ repr r ++ " := " ++ repr a ++ " " ++ repr op ++ " " ++ repr b
+    TacIntCopy r a -> prefix ++ repr r ++ " := " ++ repr a
+    TacBoolCopy r a -> prefix ++ repr r ++ " := " ++ repr a
+    TacRealCopy r a -> prefix ++ repr r ++ " := " ++ repr a
+    TacIntUnary r op a -> prefix ++ repr r ++ " := " ++ repr op ++ " " ++ repr a
+    TacBoolUnary r op a -> prefix ++ repr r ++ " := " ++ repr op ++ " " ++ repr a
+    TacRealUnary r op a -> prefix ++ repr r ++ " := " ++ repr op ++ " " ++ repr a
+    TacLabel l -> "Label " ++ l
+    TacFuncLabel l -> "Func " ++ l
+    TacGetParam r i -> prefix ++ repr r ++ " := param " ++ show i
+    TacPushParam r -> prefix ++ "param " ++ repr r
+    TacIfExp r l -> prefix ++ "if false " ++ repr r ++ " goto " ++ l
+    TacReturn r -> prefix ++ "return " ++ repr r
+    TacCall s -> prefix ++ "call " ++ s

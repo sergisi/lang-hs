@@ -9,5 +9,5 @@ main =
   do
     s <- getContents
     case runExpression s of
-      Right x -> print x
+      Right x -> putStrLn . unlines $ map repr x
       Left s -> putStrLn s

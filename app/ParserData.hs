@@ -252,6 +252,7 @@ data ThreeAddressCode
   | TacIntUnary Ref UnaryIntOp TacInt
   | TacBoolUnary Ref UnaryBoolOp TacBool
   | TacRealUnary Ref UnaryRealOp TacReal
+  | TacCopy Ref Ref
   | TacLabel Label
   | TacFuncLabel Label
   | TacGetParam Ref Int
@@ -260,6 +261,7 @@ data ThreeAddressCode
   | TacReturn Ref
   | TacCall Name
   | TacDefCode Ref ThreeAddressCode
+  | TacGoto Label
   deriving (Show, Eq, Ord, Read)
 
 prefix :: String
@@ -273,6 +275,7 @@ instance Repr ThreeAddressCode where
     TacBoolOp r a op b -> prefix ++ repr r ++ " := " ++ repr a ++ " " ++ repr op ++ " " ++ repr b
     TacIntCopy r a -> prefix ++ repr r ++ " := " ++ repr a
     TacBoolCopy r a -> prefix ++ repr r ++ " := " ++ repr a
+    TacCopy r a -> prefix ++ repr r ++ " := " ++ repr a
     TacRealCopy r a -> prefix ++ repr r ++ " := " ++ repr a
     TacIntUnary r op a -> prefix ++ repr r ++ " := " ++ repr op ++ " " ++ repr a
     TacBoolUnary r op a -> prefix ++ repr r ++ " := " ++ repr op ++ " " ++ repr a
@@ -285,3 +288,4 @@ instance Repr ThreeAddressCode where
     TacReturn r -> prefix ++ "return " ++ repr r
     TacCall s -> prefix ++ "call " ++ s
     TacDefCode r c -> prefix ++ repr r ++ " = (" ++ repr c ++ ")"
+    TacGoto l -> prefix ++ "goto " ++ l

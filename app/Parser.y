@@ -82,17 +82,10 @@ DataDef : DataDef '|' MultType { $3 : $1 }
 MultType :: { Name -> Alex MultDef }
 MultType : name                           { defineConstructor $1 [] }
          | name ListOfFuns                { defineConstructor $1 $2 }
-         -- | name '{' NamedMultType '}'     { MultDef $1 . Right $ reverse $3 }
 
 ListOfFuns :: { [Alex DataType] }
 ListOfFuns : Type                { [$1] }
            | ListOfFuns Type     { $2 : $1 }
-
-{- -- Unneeded Type.
-NamedMultType :: { [(String, DataType)] }
-NamedMultType : NamedMultType ',' name "::" Type    { ($3, $5) : $1 }
-              | name "::" Type                      { [($1, $3)] }
--}
 
 Type :: { Alex DataType }
 Type : "Real"      { return TypeReal }
@@ -110,26 +103,12 @@ Names :: { [String] }
 Names : Names name   { $2 : $1 }
       | {- empty -}  { [] }
 
-Parameters :: { [Alex Parameter] }
-Parameters : Parameters ParamInt    { return $2 : $1 }
-           | Parameters ParamReal   { return $2 : $1 }
-           | Parameters ParamBool   { return $2 : $1 }
-           | Parameters name        { paramName $2 : $1 }
-           | {- empty -}            { [] }
-
-ParamInt :: { Parameter }
-ParamInt : int              { ParamInt (ConstantInt $1) []  }
-         | '(' IntExp ')'   { (\(a, b) -> ParamInt a b) $2 }
-
-
-ParamReal :: { Parameter }
-ParamReal : real            { ParamReal (ConstantReal $1) [] }
-          | '(' RealExp ')' { (\(a, b) -> ParamReal a b) $2 }
-
-
-ParamBool :: { Parameter }
-ParamBool : bool            { ParamBool (ConstantBool $1) []  }
-          | '(' BoolExp ')' { (\(a, b) -> ParamBool a b) $2 }
+Parameters :: { [DataType -> Alex (Ref, [ThreeAddressCode])] }
+Parameters : Parameters '(' Def ')'        { $3 : $1 }
+           | Parameters int                { paramDef TypeInt (RefInt (ConstantInt $2)) : $1 }
+           | Parameters bool               { paramDef TypeBool (RefBool (ConstantBool $2)) : $1 }
+           | Parameters real               { paramDef TypeReal (RefReal (ConstantReal $2)) : $1 }
+           | {- empty -}                   { [] }
 
 Def :: { DataType -> Alex (Ref, [ThreeAddressCode]) }
 Def : IntExp             { defineIntExp $1 }
@@ -148,8 +127,8 @@ Statements : Statements ';' Statement { $1 ++ $3 }
            | {- empty -}              { [] }
 
 Statement :: { [ThreeAddressCode] }
-Statement : Def          { [ TacHalt ] }
-          | Assign       { [ TacHalt ] }
+Statement : Assign       { [ TacHalt ] }
+          -- | Def          { [ TacHalt ] }
           -- | "return" Def { TNone }
 
 IntExp :: { (TacInt, [ThreeAddressCode]) }

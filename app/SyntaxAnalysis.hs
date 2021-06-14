@@ -128,61 +128,74 @@ getBoolUnaryExp op (r, code) = do
   ref <- getRef <&> RefVar
   return (BoolRef ref, code ++ [TacBoolUnary ref op r])
 
-applyFunc :: Name -> [Alex Parameter] -> DataType -> Alex (Ref, [ThreeAddressCode])
-applyFunc name params' dtype = do
+applyFunc :: Name -> [DataType -> Alex (Ref, [ThreeAddressCode])] -> DataType -> Alex (Ref, [ThreeAddressCode])
+applyFunc name params dtype = do
   s <- alexGetUserState
   let vdicc = s ^. values
-  params <- sequenceA params'
   if any (Map.member name) vdicc
     then do
       let val = (Map.! name) . head $ dropWhile (not . Map.member name) vdicc
-      case correctApplication (val ^. dataType) (map getType params) of
-        Left err -> strError err
-        Right x ->
-          if x == dtype
-            then case x of
-              TypeFun xs -> let len = length xs; len' = length params in
-                do
-                  tmpref <- getRef
-                  return
-                    ( RefFunc tmpref,
-                      reverse
-                        (
-                          zipWith ($) ((\i -> TacDefCode (RefInf tmpref i) (TacCall name) ):
-                            map ((\ref' i -> TacDefCode (RefInf tmpref i) (TacPushParam ref')) . paramToRef) params)
-                            [len' * 8, (len' - 1) * 8 ..]
-                          ++ map applyFunc' params
-                        )
-                     )
-              -- TODO finish this
-              _ -> return (RefSP, reverse (TacCall name : map applyFunc' params))
-            else
+      case val ^. dataType of
+        TypeFun xs ->
+          if length xs < length params
+            then
               strError $
-                "\n  Returned type is not the same as expected\n\t\t Expected: "
-                  ++ show x
-                  ++ "\n\t\t Returned: "
-                  ++ show dtype
-                  ++ "\n\tFunction: "
-                  ++ name
-                  ++ "\n\tParams:   "
-                  ++ show params
-    else strError $ "Name " ++ name ++ "is not defined. Relevant bindings: " ++ show (s ^. values)
-
-applyFunc' :: Parameter -> ThreeAddressCode
-applyFunc' p = case p of
-  ParamInt ti _ -> TacPushParam $ RefInt ti
-  ParamBool ti _ -> TacPushParam $ RefBool ti
-  ParamReal ti _ -> TacPushParam $ RefReal ti
-  ParamName name _ -> TacPushParam $ RefVar name
-
-correctApplication :: DataType -> [DataType] -> Either String DataType
-correctApplication (TypeFun xs) ys
-  | length xs > length ys && and (zipWith (==) xs ys) = case drop (length ys) xs of
-    [x] -> Right x
-    xs -> Right $ TypeFun xs
-  | otherwise = Left "Applied more arguments than needed."
-correctApplication y (x : xs) = Left $ "Expected function but instead found a value:\n\t\tFound:     " ++ show y ++ "\n\t\tExpected: " ++ show (x:xs)
-correctApplication dt dts = Left "correctApplication not implemented"
+                "Applied more arguments than needed:"
+                  ++ "\n\t\tApplied: "
+                  ++ show (length params)
+                  ++ "\n\t\t    Got: "
+                  ++ show (length xs)
+            else do
+              appliedParams <- zipWithM ($) params xs
+              if length xs - 1 == length params
+                then do
+                  r <- getRef <&> RefVar
+                  return
+                    ( r,
+                      reverse
+                        ( TacCopy r RefSP :
+                          TacCall name :
+                          map (TacPushParam . fst) appliedParams
+                            ++ concatMap snd appliedParams
+                        )
+                    )
+                else do
+                  funcName <- getRef
+                  later <- getRef
+                  -- Idea:
+                  --   goto later; Func funcName [Def ...] label later;
+                  return
+                    ( RefVar funcName,
+                      TacGoto later :
+                      TacFuncLabel funcName :
+                        concatMap snd appliedParams
+                        ++ map (TacPushParam . fst) appliedParams
+                        ++ [ TacCall name
+                           , TacReturn RefSP
+                           , TacLabel later
+                           ]
+                    )
+        x ->
+          if null params -- Synonim
+            then
+              if x == dtype
+                then return (RefVar name, [])
+                else
+                  strError $
+                    "Expected value and returned differ: "
+                      ++ "\n\t\tExpected: "
+                      ++ show dtype
+                      ++ "\n\t\tReturned: "
+                      ++ show x
+            else
+              strError
+                ( "Applied Function to value: "
+                    ++ "\n\t\t               Value: "
+                    ++ show x
+                    ++ "\n\t\tNumber of parameters: "
+                    ++ show (length params)
+                )
+    else strError $ "Name " ++ name ++ "is not defined"
 
 defineIntExp :: IntExp -> DataType -> Alex (Ref, [ThreeAddressCode])
 defineIntExp (a, ts) dto = return (RefInt a, ts)
@@ -222,3 +235,14 @@ defineFunc name dto f = do
                TacReturn RefSP
              ]
     r -> return $ TacFuncLabel name : code ++ [TacReturn ref]
+
+paramDef :: DataType -> Ref -> DataType -> Alex (Ref, [ThreeAddressCode])
+paramDef d r d'
+  | d == d' = return (r, [])
+  | otherwise =
+    strError $
+      "Incompatible types: "
+        ++ "\n\t\tExpected: "
+        ++ show d
+        ++ "\n\t\t     Got: "
+        ++ show d'

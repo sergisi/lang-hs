@@ -165,7 +165,7 @@ applyFunc name params dtype = do
                   -- Idea:
                   --   goto later; Func funcName [Def ...] label later;
                   return
-                    ( RefVar funcName,
+                    ( RefFunc funcName,
                       TacGoto later :
                       TacFuncLabel funcName :
                         concatMap snd appliedParams
@@ -217,7 +217,26 @@ paramName name = do
       return $ ParamName name (val ^. dataType)
     else strError $ "Constructor with name " ++ name ++ " is already defined at " ++ show (s ^. values)
 
--- TODO que ha de fer aquesta funció?
+
+defineFunc' :: Name -> [Alex DataType] -> (DataType -> Alex (Ref, [ThreeAddressCode])) -> Alex [ThreeAddressCode]
+defineFunc' name [x] f = do
+  x' <- x
+  (ref, code) <- f x'
+  return $ code ++ [TacCopy (RefVar name) ref]
+defineFunc' name dto f = do
+  x' <- sequenceA dto
+  (ref, code) <- f . TypeFun $ reverse x'
+  case ref of
+    RefFunc r ->
+      return $
+        TacFuncLabel name :
+        code
+          ++ [ TacCall r,
+               TacReturn RefSP
+             ]
+    r -> return $ TacFuncLabel name : code ++ [TacReturn ref]
+
+
 defineFunc :: Name -> [Alex DataType] -> (DataType -> Alex (Ref, [ThreeAddressCode])) -> Alex [ThreeAddressCode]
 defineFunc name [x] f = do
   x' <- x

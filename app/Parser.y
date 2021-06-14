@@ -75,6 +75,10 @@ Assign :: { [ThreeAddressCode] }
 Assign : "data" name '=' DataDef            {% defineData $2 $4 }
        | name "::" Fun  '=' Def             {% defineFunc $1 $3 $5}
 
+Statement :: { [ThreeAddressCode] }
+Statement : "data" name '=' DataDef         {% defineData $2 $4 }
+          | name "::" Fun  '=' Def          {% defineFunc' $1 $3 $5}
+
 DataDef :: { [Name -> Alex MultDef] }
 DataDef : DataDef '|' MultType { $3 : $1 }
         | MultType             { [$1] }
@@ -125,11 +129,6 @@ Statements : Statements ';' Statement { $1 ++ $3 }
            | Statements ';'           { $1 }
            | Statement                { $1 }
            | {- empty -}              { [] }
-
-Statement :: { [ThreeAddressCode] }
-Statement : Assign       { [ TacHalt ] }
-          -- | Def          { [ TacHalt ] }
-          -- | "return" Def { TNone }
 
 IntExp :: { (TacInt, [ThreeAddressCode]) }
 IntExp : IntExp '+'   IntExp   {% getIntExp $1 IntOpSum $3 }

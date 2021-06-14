@@ -140,14 +140,32 @@ applyFunc name params' dtype = do
         Left err -> strError err
         Right x ->
           if x == dtype
-            then
-              let initParams = concatMap getCode params
-               in case x of
-                    TypeFun xs -> return []
-                    _ -> return (RefSp, reverse (TacCall name : map applyFunc' params))
-            else strError $ "\n  Returned type is not the same as expected\n\t\t"
-                 ++ show x ++ "\n\t\t"
-                 ++ show dtype ++ "\n\tFunction: " ++ name ++ "\n\tParams: " ++ show params
+            then case x of
+              TypeFun xs -> let len = length xs; len' = length params in
+                do
+                  tmpref <- getRef
+                  return
+                    ( RefFunc tmpref,
+                      reverse
+                        (
+                          zipWith ($) ((\i -> TacDefCode (RefInf tmpref i) (TacCall name) ):
+                            map ((\ref' i -> TacDefCode (RefInf tmpref i) (TacPushParam ref')) . paramToRef) params)
+                            [len' * 8, (len' - 1) * 8 ..]
+                          ++ map applyFunc' params
+                        )
+                     )
+              -- TODO finish this
+              _ -> return (RefSP, reverse (TacCall name : map applyFunc' params))
+            else
+              strError $
+                "\n  Returned type is not the same as expected\n\t\t Expected: "
+                  ++ show x
+                  ++ "\n\t\t Returned: "
+                  ++ show dtype
+                  ++ "\n\tFunction: "
+                  ++ name
+                  ++ "\n\tParams:   "
+                  ++ show params
     else strError $ "Name " ++ name ++ "is not defined. Relevant bindings: " ++ show (s ^. values)
 
 applyFunc' :: Parameter -> ThreeAddressCode
@@ -155,14 +173,15 @@ applyFunc' p = case p of
   ParamInt ti _ -> TacPushParam $ RefInt ti
   ParamBool ti _ -> TacPushParam $ RefBool ti
   ParamReal ti _ -> TacPushParam $ RefReal ti
+  ParamName name _ -> TacPushParam $ RefVar name
 
 correctApplication :: DataType -> [DataType] -> Either String DataType
 correctApplication (TypeFun xs) ys
   | length xs > length ys && and (zipWith (==) xs ys) = case drop (length ys) xs of
-      [x] -> Right x
-      xs -> Right $ TypeFun xs
-  | otherwise = Left "Applyed more arguments than needed."
-correctApplication _ (x : xs) = Left "Can this happen? I don't know"
+    [x] -> Right x
+    xs -> Right $ TypeFun xs
+  | otherwise = Left "Applied more arguments than needed."
+correctApplication y (x : xs) = Left $ "Expected function but instead found a value:\n\t\tFound:     " ++ show y ++ "\n\t\tExpected: " ++ show (x:xs)
 correctApplication dt dts = Left "correctApplication not implemented"
 
 defineIntExp :: IntExp -> DataType -> Alex (Ref, [ThreeAddressCode])
@@ -185,6 +204,21 @@ paramName name = do
       return $ ParamName name (val ^. dataType)
     else strError $ "Constructor with name " ++ name ++ " is already defined at " ++ show (s ^. values)
 
-defineFunc :: Name -> [Alex DataType] -> (DataType -> Alex [ThreeAddressCode]) -> Alex [ThreeAddressCode]
-defineFunc name [x] f = x >>= (TacFuncLabel name :) . f
-defineFunc name dto f = sequenceA dto >>= f . TypeFun . reverse
+-- TODO que ha de fer aquesta funció?
+defineFunc :: Name -> [Alex DataType] -> (DataType -> Alex (Ref, [ThreeAddressCode])) -> Alex [ThreeAddressCode]
+defineFunc name [x] f = do
+  x' <- x
+  (ref, code) <- f x'
+  return $ TacFuncLabel name : code ++ [TacReturn ref]
+defineFunc name dto f = do
+  x' <- sequenceA dto
+  (ref, code) <- f . TypeFun $ reverse x'
+  case ref of
+    RefFunc r ->
+      return $
+        TacFuncLabel name :
+        code
+          ++ [ TacCall r,
+               TacReturn RefSP
+             ]
+    r -> return $ TacFuncLabel name : code ++ [TacReturn ref]

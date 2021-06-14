@@ -21,7 +21,6 @@ type Val = Either Double Int
 
 type Name = String
 
-
 -- | Type
 data DataType
   = TypeBool
@@ -67,21 +66,22 @@ getType p = case p of
   ParamInt _ _ -> TypeInt
   ParamBool _ _ -> TypeBool
   ParamReal _ _ -> TypeReal
+  ParamName _ dt -> dt
 
 getCode :: Parameter -> [ThreeAddressCode]
 getCode p = case p of
   ParamInt _ xs -> xs
   ParamBool _ xs -> xs
   ParamReal _ xs -> xs
+  ParamName _ _ -> []
 
 -- TODO  is this even possible.
 paramToRef :: Parameter -> Ref
 paramToRef p = case p of
-    ParamInt TacInt [ThreeAddressCode]
-    ParamReal TacReal [ThreeAddressCode]
-    ParamBool TacBool [ThreeAddressCode]
-    ParamName String DataType
-
+  ParamInt r _ -> RefInt r
+  ParamReal r _ -> RefReal r
+  ParamBool r _ -> RefBool r
+  ParamName name _ -> RefVar name
 
 -- TODO Delete
 data Exp
@@ -198,7 +198,7 @@ data Ref
   | RefReal TacReal
   | RefBool TacBool
   | RefSP
-  | RefFunc Name [DataType]
+  | RefFunc Name
   deriving (Show, Eq, Read, Ord)
 
 instance Repr Ref where
@@ -209,6 +209,7 @@ instance Repr Ref where
     RefReal r -> repr r
     RefBool r -> repr r
     RefSP -> "$SP"
+    RefFunc n -> n
 
 data TacReal = ConstantReal Double | RealRef Ref
   deriving (Show, Eq, Read, Ord)
@@ -258,6 +259,7 @@ data ThreeAddressCode
   | TacIfExp Ref Label
   | TacReturn Ref
   | TacCall Name
+  | TacDefCode Ref ThreeAddressCode
   deriving (Show, Eq, Ord, Read)
 
 prefix :: String
@@ -282,3 +284,4 @@ instance Repr ThreeAddressCode where
     TacIfExp r l -> prefix ++ "if false " ++ repr r ++ " goto " ++ l
     TacReturn r -> prefix ++ "return " ++ repr r
     TacCall s -> prefix ++ "call " ++ s
+    TacDefCode r c -> prefix ++ repr r ++ " = (" ++ repr c ++ ")"

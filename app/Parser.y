@@ -107,7 +107,7 @@ Fun : Fun "->" Type { $3 : $1 }
     | Type          { [$1] }
 
 Names :: { [String] }
-Names : Names name   { $1 : $2 }
+Names : Names name   { $2 : $1 }
       | {- empty -}  { [] }
 
 Parameters :: { [Alex Parameter] }
@@ -136,7 +136,7 @@ Def : IntExp             { defineIntExp $1 }
     | RealExp            { defineRealExp $1 }
     | BoolExp            { defineBoolExp $1 }
     | name Parameters    { applyFunc $1 $2 }
-    | FunctionDef        { const $ return (RefSp, []) }
+    | FunctionDef        { const $ return (RefSP, []) }
 
 FunctionDef :: { Exp }
 FunctionDef : Names '{' Statements '}'   { TNone }

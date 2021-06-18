@@ -111,21 +111,23 @@ Names :: { [String] }
 Names : Names name   { $2 : $1 }
       | {- empty -}  { [] }
 
-Parameters :: { [DataType -> Alex (Ref, [ThreeAddressCode])] }
+Parameters :: { [Exp] }
 Parameters : Parameters '(' Def ')'        { $3 : $1 }
-           | Parameters int                { paramDef TypeInt (RefInt (ConstantInt $2)) : $1 }
-           | Parameters bool               { paramDef TypeBool (RefBool (ConstantBool $2)) : $1 }
-           | Parameters real               { paramDef TypeReal (RefReal (ConstantReal $2)) : $1 }
-           | Parameters "()"               { paramDef TypeUnit unit : $1}
+           | Parameters int                { guardedExp TypeInt  (return (RefConstInt  $2, [])): $1 }
+           | Parameters bool               { guardedExp TypeBool (return (RefConstBool $2, [])): $1 }
+           | Parameters real               { guardedExp TypeReal (return (RefConstReal $2, [])): $1 }
+           | Parameters name               { getNameParam $2 : $1 }
+           | Parameters "()"               { guardedExp TypeUnit (return (unit, [])) : $1}
            | {- empty -}                   { [] }
 
-Def :: { DataType -> Alex (Ref, [ThreeAddressCode]) }
-Def : IntExp                               { defineIntExp $1 }
-    | RealExp                              { defineRealExp $1 }
-    | BoolExp                              { defineBoolExp $1 }
+Def :: { Exp }
+Def : IntExp                               { $1 }
+    | RealExp                              { $1 }
+    | BoolExp                              { $1 }
     | name Parameters                      { applyFunc $1 $2 }
     | "fun" Names '{' Statements Def '}'   { functionDef $2 $4 $5 }
     | "()"                                 { const $ return (unit, []) }
+    | '(' Def ')'                          { $2 }
     -- | if
     -- | while
     -- | repeat until
@@ -136,53 +138,50 @@ Statements :: { Alex [ThreeAddressCode] }
 Statements : Statements Statement ';' { liftA2 (++) $1 $2 }
            | {- empty -}              { return [] }
 
-IntExp :: { (TacInt, [ThreeAddressCode]) }
-IntExp : IntExp '+'   IntExp   {% getIntExp $1 IntOpSum $3 }
-       | IntExp '-'   IntExp   {% getIntExp $1 IntOpMinus $3 }
-       | IntExp '*'   IntExp   {% getIntExp $1 IntOpMult $3 }
-       | IntExp '%'   IntExp   {% getIntExp $1 IntOpMod $3 }
-       | IntExp "div" IntExp   {% getIntExp $1 IntOpDiv $3 }
-       | IntExp "=="  IntExp   {% getIntExp $1 IntOpEq $3}
-       | IntExp "!="  IntExp   {% getIntExp $1 IntOpNeq $3}
-       | IntExp '<'   IntExp   {% getIntExp $1 IntOpLt $3}
-       | IntExp "<="  IntExp   {% getIntExp $1 IntOpLEq $3}
-       | IntExp '>'   IntExp   {% getIntExp $1 IntOpGt $3}
-       | IntExp ">="  IntExp   {% getIntExp $1 IntOpGEq $3}
-       | IntExp ">>"  IntExp   {% getIntExp $1 IntOpRightShift $3 }
-       | IntExp "<<"  IntExp   {% getIntExp $1 IntOpLeftShift $3 }
-       | IntExp '&'   IntExp   {% getIntExp $1 IntOpBitAnd $3 }
-       | IntExp '|'   IntExp   {% getIntExp $1 IntOpBitOr $3 }
-       | IntExp '^'   IntExp   {% getIntExp $1 IntOpBitXOR $3 }
-       | '~' IntExp            {% getIntUnaryExp UnaryIntComplement $2 }
-       | '-' IntExp            {% getIntUnaryExp UnaryIntMinus $2 }
-       | int                   { (ConstantInt $1, []) }
-       | '(' IntExp   ')'      { $2 }
+IntExp :: { Exp }
+IntExp : Def '+'   Def   { getExp TypeInt $1 OpSum $3 }
+       | Def '-'   Def   { getExp TypeInt $1 OpMinus $3 }
+       | Def '*'   Def   { getExp TypeInt $1 OpMult $3 }
+       | Def '%'   Def   { getExp TypeInt $1 OpMod $3 }
+       | Def "div" Def   { getExp TypeInt $1 OpDiv $3 }
+       | Def "=="  Def   { getExp TypeInt $1 OpEq $3}
+       | Def "!="  Def   { getExp TypeInt $1 OpNeq $3}
+       | Def '<'   Def   { getExp TypeInt $1 OpLt $3}
+       | Def "<="  Def   { getExp TypeInt $1 OpLEq $3}
+       | Def '>'   Def   { getExp TypeInt $1 OpGt $3}
+       | Def ">="  Def   { getExp TypeInt $1 OpGEq $3}
+       | Def ">>"  Def   { getExp TypeInt $1 OpRightShift $3 }
+       | Def "<<"  Def   { getExp TypeInt $1 OpLeftShift $3 }
+       | Def '&'   Def   { getExp TypeInt $1 OpBitAnd $3 }
+       | Def '|'   Def   { getExp TypeInt $1 OpBitOr $3 }
+       | Def '^'   Def   { getExp TypeInt $1 OpBitXOR $3 }
+       | '~'  Def        { getUnaryExp TypeInt UnaryComplement $2 }
+       | '-'  Def        { getUnaryExp TypeInt UnaryMinus $2 }
+       | int             { guardedExp TypeInt (return (RefConstInt $1, [])) }
 
 
-RealExp :: { (TacReal, [ThreeAddressCode]) }
-RealExp : RealExp '+'   RealExp   {% getRealExp $1 RealOpSum $3 }
-        | RealExp '-'   RealExp   {% getRealExp $1 RealOpMinus $3 }
-        | RealExp '*'   RealExp   {% getRealExp $1 RealOpMult $3 }
-        | RealExp '/'   RealExp   {% getRealExp $1 RealOpDiv $3 }
-        | RealExp "=="  RealExp   {% getRealExp $1 RealOpEq $3}
-        | RealExp "!="  RealExp   {% getRealExp $1 RealOpNeq $3}
-        | RealExp '<'   RealExp   {% getRealExp $1 RealOpLt $3}
-        | RealExp "<="  RealExp   {% getRealExp $1 RealOpLEq $3}
-        | RealExp '>'   RealExp   {% getRealExp $1 RealOpGt $3}
-        | RealExp ">="  RealExp   {% getRealExp $1 RealOpGEq $3}
-        | '-' RealExp             {% getRealUnaryExp UnaryRealMinus $2 }
-        | real                    { (ConstantReal $1, []) }
-        | '(' RealExp   ')'       { $2 }
+RealExp :: { Exp }
+RealExp : Def '+'   Def   { getExp TypeReal $1 OpSum $3 }
+        | Def '-'   Def   { getExp TypeReal $1 OpMinus $3 }
+        | Def '*'   Def   { getExp TypeReal $1 OpMult $3 }
+        | Def '/'   Def   { getExp TypeReal $1 OpDiv $3 }
+        | Def "=="  Def   { getExp TypeReal $1 OpEq $3}
+        | Def "!="  Def   { getExp TypeReal $1 OpNeq $3}
+        | Def '<'   Def   { getExp TypeReal $1 OpLt $3}
+        | Def "<="  Def   { getExp TypeReal $1 OpLEq $3}
+        | Def '>'   Def   { getExp TypeReal $1 OpGt $3}
+        | Def ">="  Def   { getExp TypeReal $1 OpGEq $3}
+        | '-' Def         { getUnaryExp TypeReal UnaryMinus $2 }
+        | real            { guardedExp TypeReal ( return (RefConstReal $1, [])) }
 
-BoolExp :: { (TacBool, [ThreeAddressCode]) }
-BoolExp : BoolExp "&&"  BoolExp   {% getBoolExp $1 BoolOpAnd $3 }
-        | BoolExp "||"  BoolExp   {% getBoolExp $1 BoolOpOr $3 }
-        | BoolExp "=="  BoolExp   {% getBoolExp $1 BoolOpEq $3 }
-        | BoolExp "!="  BoolExp   {% getBoolExp $1 BoolOpNeq $3 }
-        | BoolExp '^'   BoolExp   {% getBoolExp $1 BoolOpXOR $3}
-        | '!' BoolExp             {% getBoolUnaryExp UnaryBoolNot $2 }
-        | bool                    { (ConstantBool $1, []) }
-        | '(' BoolExp   ')'       { $2 }
+BoolExp :: { Exp }
+BoolExp : Def "&&"  Def   { getExp TypeBool $1 OpAnd $3 }
+        | Def "||"  Def   { getExp TypeBool $1 OpOr $3 }
+        | Def "=="  Def   { getExp TypeBool $1 OpEq $3 }
+        | Def "!="  Def   { getExp TypeBool $1 OpNeq $3 }
+        | Def '^'   Def   { getExp TypeBool $1 OpXOR $3}
+        | '!' Def         { getUnaryExp TypeBool UnaryNot $2 }
+        | bool            { guardedExp TypeBool (return (RefConstBool $1, [])) }
 
 
 {

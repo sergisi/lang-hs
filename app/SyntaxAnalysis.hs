@@ -8,8 +8,17 @@ import Lens.Micro
 import Lexer
 import ParserData
 
+type Exp' = Alex (Ref, [ThreeAddressCode])
+
+type Exp = DataType -> Exp'
 
 -- * Utility Functions
+
+guardedExp :: DataType -> Exp' -> Exp
+guardedExp d m d'
+  | d /= d' = strError $ "Expected " ++ repr d ++ " but found " ++ repr d'
+  | otherwise = m
+
 happyError :: Show s => s -> Alex a
 happyError = strError . show
 
@@ -18,14 +27,16 @@ strError tok = do
   x <- getLineAndColumn
   alexError $ "Happy error on line and column " ++ show x ++ ": " ++ tok
 
-
 -- | Adds a new Context
 newContext :: Alex AlexUserState
 newContext = do
   s <- alexGetUserState
-  let s' = over values (Map.empty:)
-          $ over definitions (Map.empty:)
-           s
+  let s' =
+        over values (Map.empty :) $
+          over
+            definitions
+            (Map.empty :)
+            s
   alexSetUserState s'
   return s'
 
@@ -39,8 +50,26 @@ removeContext' a@(AlexUserState vs ds _)
   | length ds == 1 = strError "Invalid State: Removed definitions context when there was only one left."
   | otherwise = return . over values tail $ over definitions tail a
 
-
 -- * Parser.y functions
+
+getNameParam :: Name -> DataType -> Exp'
+getNameParam name dt = do
+  s <- alexGetUserState
+  let vdicc = s ^. values
+  if any (Map.member name) vdicc
+    then getNameParam' name dt
+    else strError $ "Name " ++ name ++ " is not defined. Expected type: " ++ repr dt
+
+getNameParam' ::
+  -- | Name of the function
+  Name ->
+  Exp
+getNameParam' name dt = do
+  s <- alexGetUserState
+  let vdicc = s ^. values
+  let val = (Map.! name) . head $ dropWhile (not . Map.member name) vdicc
+  guardedExp val (return (RefVar name, [])) dt
+
 defineData :: Name -> [Name -> Alex MultDef] -> Alex [ThreeAddressCode]
 defineData name def = do
   s' <- alexGetUserState
@@ -64,7 +93,7 @@ generateMultDef (MultDef name params) x = do
   let f (y, ys) dt = (sizeof dt + y, TacGetParam (RefInf ref y) : ys)
   return $
     [ TacFuncLabel name,
-      TacIntCopy (RefInf ref 0) $ ConstantInt x
+      TacCopy (RefInf ref 0) $ RefConstInt x
     ]
       ++ (reverse . (TacReturn (RefVar ref) :) . zipWith (flip ($)) [len -1, len -2 ..] . tail . snd $ foldl f (1, []) params)
   where
@@ -117,41 +146,22 @@ defineValue name dtype' def = do
       s
   return def
 
-type IntExp = (TacInt, [ThreeAddressCode])
+getExp :: DataType -> Exp -> Op -> Exp -> DataType -> Exp'
+getExp dt e op e' dt'
+  | dt /= dt' = strError $ "Needed " ++ repr dt ++ " but found " ++ repr dt'
+  | otherwise = do
+    ref <- getRef <&> RefVar
+    (r, code) <- e dt
+    (r', code') <- e' dt
+    return (ref, code ++ code' ++ [TacOp ref r op r'])
 
-getIntExp :: IntExp -> IntOp -> IntExp -> Alex IntExp
-getIntExp (r, code) op (r', code') = do
-  ref <- getRef <&> RefVar
-  return (IntRef ref, code ++ code' ++ [TacIntOp ref r op r'])
-
-getIntUnaryExp :: UnaryIntOp -> IntExp -> Alex IntExp
-getIntUnaryExp op (r, code) = do
-  ref <- getRef <&> RefVar
-  return (IntRef ref, code ++ [TacIntUnary ref op r])
-
-type RealExp = (TacReal, [ThreeAddressCode])
-
-getRealExp :: RealExp -> RealOp -> RealExp -> Alex RealExp
-getRealExp (r, code) op (r', code') = do
-  ref <- getRef <&> RefVar
-  return (RealRef ref, code ++ code' ++ [TacRealOp ref r op r'])
-
-getRealUnaryExp :: UnaryRealOp -> RealExp -> Alex RealExp
-getRealUnaryExp op (r, code) = do
-  ref <- getRef <&> RefVar
-  return (RealRef ref, code ++ [TacRealUnary ref op r])
-
-type BoolExp = (TacBool, [ThreeAddressCode])
-
-getBoolExp :: BoolExp -> BoolOp -> BoolExp -> Alex BoolExp
-getBoolExp (r, code) op (r', code') = do
-  ref <- getRef <&> RefVar
-  return (BoolRef ref, code ++ code' ++ [TacBoolOp ref r op r'])
-
-getBoolUnaryExp :: UnaryBoolOp -> BoolExp -> Alex BoolExp
-getBoolUnaryExp op (r, code) = do
-  ref <- getRef <&> RefVar
-  return (BoolRef ref, code ++ [TacBoolUnary ref op r])
+getUnaryExp :: DataType -> UnaryOp -> Exp -> DataType -> Exp'
+getUnaryExp dt op e' dt'
+  | dt /= dt' = strError $ "Needed " ++ repr dt ++ " but found " ++ repr dt'
+  | otherwise = do
+    ref <- getRef <&> RefVar
+    (r', code') <- e' dt
+    return (ref, code' ++ [TacUnary ref op r'])
 
 applyFunc :: Name -> [DataType -> Alex (Ref, [ThreeAddressCode])] -> DataType -> Alex (Ref, [ThreeAddressCode])
 applyFunc name params dtype = do
@@ -222,20 +232,6 @@ applyFunc name params dtype = do
                 )
     else strError $ "Apply Function name " ++ name ++ " is not defined"
 
-
--- * TODO Refactor this.
-defineIntExp :: IntExp -> DataType -> Alex (Ref, [ThreeAddressCode])
-defineIntExp (a, ts) dto | dto == TypeInt = return (RefInt a, ts)
-                         | otherwise = strError $ "Expected Int, but found: " ++ repr dto
-
-defineRealExp :: RealExp -> DataType -> Alex (Ref, [ThreeAddressCode])
-defineRealExp (a, ts) dto | dto == TypeReal = return (RefReal a, ts)
-                          | otherwise = strError $ "Expected Int, but found: " ++ repr dto
-
-defineBoolExp :: BoolExp -> DataType -> Alex (Ref, [ThreeAddressCode])
-defineBoolExp (a, ts) dto | dto == TypeBool = return (RefBool a, ts)
-                          | otherwise = strError $ "Expected Int, but found: " ++ repr dto
-
 -- | Define Func only for Outer Assigns
 defineFunc ::
   -- |  Name of the function
@@ -281,17 +277,6 @@ defineFunc' name [x] f = do
   return $ code ++ [TacCopy (RefVar name) ref]
 defineFunc' a b c = defineFunc a b c
 
-paramDef :: DataType -> Ref -> DataType -> Alex (Ref, [ThreeAddressCode])
-paramDef d r d'
-  | d == d' = return (r, [])
-  | otherwise =
-    strError $
-      "Incompatible types: "
-        ++ "\n\t\tExpected: "
-        ++ show d
-        ++ "\n\t\t     Got: "
-        ++ show d'
-
 functionDef :: [Name] -> Alex [ThreeAddressCode] -> (DataType -> Alex (Ref, [ThreeAddressCode])) -> DataType -> Alex (Ref, [ThreeAddressCode])
 functionDef names mcode def (TypeFun xs)
   | length xs <= length names =
@@ -299,7 +284,7 @@ functionDef names mcode def (TypeFun xs)
   | otherwise =
     do
       s <- newContext
-      let s'' = over values (\(_:vs) -> Map.fromList (zip names xs):vs) s
+      let s'' = over values (\(_ : vs) -> Map.fromList (zip names xs) : vs) s
       alexSetUserState s''
       code <- mcode
       let xs' = drop (length names) xs

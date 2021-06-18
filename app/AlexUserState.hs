@@ -8,13 +8,6 @@ import           Lens.Micro
 import           Lens.Micro.TH
 import           ParserData
 
-data Value = Value { _dataType :: DataType
-                   , _value :: Maybe Val -- ^ Nothing represents bottom or undefined
-                   }
-             deriving (Show, Eq, Ord, Read)
-
-makeLenses ''Value
-
 -- | AlexUserState. It contains the state needed for the program
 -- tempRefs contains an infinite list of temporal names. This makes a problem
 -- to make the show and eq of this data. It was done at hand, only comparing
@@ -43,4 +36,4 @@ instance Eq AlexUserState where
          && head (a ^. tempRefs) == head (b ^. tempRefs)
 
 alexInitUserState :: AlexUserState
-alexInitUserState = AlexUserState [Map.empty] [Map.empty] $ map (("temp" ++ ) . show) [0..]
+alexInitUserState = AlexUserState [Map.empty] [Map.empty] $ map (("temp" ++ ) . show) ([0..] :: [Integer])

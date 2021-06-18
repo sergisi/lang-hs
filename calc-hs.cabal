@@ -29,6 +29,7 @@ library
         ParserData,
         SyntaxAnalysis
 
+    ghc-options: -Wall
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:    base ^>=4.14.0.0,
@@ -42,6 +43,7 @@ library
 executable state
     main-is:          StateMain.hs
 
+    ghc-options: -Wall
     -- Modules included in this executable, other than Main.
     other-modules:
         AlexUserState,
@@ -64,6 +66,7 @@ executable state
 executable code
     main-is:          Main.hs
 
+    ghc-options: -Wall
     -- Modules included in this executable, other than Main.
     other-modules:
         AlexUserState,

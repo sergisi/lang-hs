@@ -2,7 +2,7 @@ module Main where
 
 import Parser
 import ParserData
-import Lexer
+import Lexer()
 
 main :: IO ()
 main =
@@ -10,4 +10,4 @@ main =
     s <- getContents
     case runExpression s of
       Right x -> putStrLn . unlines $ map repr x
-      Left s -> putStrLn s
+      Left s' -> putStrLn s'

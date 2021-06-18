@@ -8,6 +8,8 @@ import Lens.Micro
 import Lexer
 import ParserData
 
+
+-- * Utility Functions
 happyError :: Show s => s -> Alex a
 happyError = strError . show
 
@@ -16,6 +18,29 @@ strError tok = do
   x <- getLineAndColumn
   alexError $ "Happy error on line and column " ++ show x ++ ": " ++ tok
 
+
+-- | Adds a new Context
+newContext :: Alex AlexUserState
+newContext = do
+  s <- alexGetUserState
+  let s' = over values (Map.empty:)
+          $ over definitions (Map.empty:)
+           s
+  alexSetUserState s'
+  return s'
+
+-- | Removes the last context if it does not leave [] as the actual context.
+removeContext :: Alex AlexUserState
+removeContext = alexGetUserState >>= removeContext'
+
+removeContext' :: AlexUserState -> Alex AlexUserState
+removeContext' a@(AlexUserState vs ds _)
+  | length vs == 1 = strError "Invalid State: Removed values context when there was only one left."
+  | length ds == 1 = strError "Invalid State: Removed definitions context when there was only one left."
+  | otherwise = return . over values tail $ over definitions tail a
+
+
+-- * Parser.y functions
 defineData :: Name -> [Name -> Alex MultDef] -> Alex [ThreeAddressCode]
 defineData name def = do
   s' <- alexGetUserState
@@ -36,7 +61,7 @@ generateMultDef ::
   Alex [ThreeAddressCode]
 generateMultDef (MultDef name params) x = do
   ref <- getRef
-  let f (x, xs) dt = (sizeof dt + x, TacGetParam (RefInf ref x) : xs)
+  let f (y, ys) dt = (sizeof dt + y, TacGetParam (RefInf ref y) : ys)
   return $
     [ TacFuncLabel name,
       TacIntCopy (RefInf ref 0) $ ConstantInt x
@@ -58,7 +83,7 @@ defineConstructor name xs' typeName = do
         else do
           let dataTypes = reverse $ TypeDef typeName : xs
           -- Change Nothing to something more appropiate when val is defined.
-          alexSetUserState $ over values (\(x : xs) -> Map.insert name (Value (TypeFun dataTypes) Nothing) x : xs) s
+          alexSetUserState $ over values (\(z : zs) -> Map.insert name (TypeFun dataTypes) z : zs) s
           return $ MultDef name dataTypes
     else
       let x = map snd . filter (not . fst) $ zip b xs
@@ -82,13 +107,13 @@ defineTypeName name =
 
 defineValue :: Name -> Alex DataType -> Exp -> Alex Exp
 defineValue name dtype' def = do
-  dataType <- dtype'
+  dType <- dtype'
   s <- alexGetUserState
   alexSetUserState $
     over
       values
       -- TODO canviar el valor generat.
-      (\(x : xs) -> Map.insert name (Value dataType Nothing) x : xs)
+      (\(x : xs) -> Map.insert name dType x : xs)
       s
   return def
 
@@ -135,7 +160,7 @@ applyFunc name params dtype = do
   if any (Map.member name) vdicc
     then do
       let val = (Map.! name) . head $ dropWhile (not . Map.member name) vdicc
-      case val ^. dataType of
+      case val of
         TypeFun xs ->
           if length xs < length params
             then
@@ -168,11 +193,11 @@ applyFunc name params dtype = do
                     ( RefFunc funcName,
                       TacGoto later :
                       TacFuncLabel funcName :
-                        concatMap snd appliedParams
+                      concatMap snd appliedParams
                         ++ map (TacPushParam . fst) appliedParams
-                        ++ [ TacCall name
-                           , TacReturn RefSP
-                           , TacLabel later
+                        ++ [ TacCall name,
+                             TacReturn RefSP,
+                             TacLabel later
                            ]
                     )
         x ->
@@ -195,56 +220,40 @@ applyFunc name params dtype = do
                     ++ "\n\t\tNumber of parameters: "
                     ++ show (length params)
                 )
-    else strError $ "Name " ++ name ++ "is not defined"
+    else strError $ "Apply Function name " ++ name ++ " is not defined"
 
+
+-- * TODO Refactor this.
 defineIntExp :: IntExp -> DataType -> Alex (Ref, [ThreeAddressCode])
-defineIntExp (a, ts) dto = return (RefInt a, ts)
+defineIntExp (a, ts) dto | dto == TypeInt = return (RefInt a, ts)
+                         | otherwise = strError $ "Expected Int, but found: " ++ repr dto
 
 defineRealExp :: RealExp -> DataType -> Alex (Ref, [ThreeAddressCode])
-defineRealExp (a, ts) dto = return (RefReal a, ts)
+defineRealExp (a, ts) dto | dto == TypeReal = return (RefReal a, ts)
+                          | otherwise = strError $ "Expected Int, but found: " ++ repr dto
 
 defineBoolExp :: BoolExp -> DataType -> Alex (Ref, [ThreeAddressCode])
-defineBoolExp (a, ts) dto = return (RefBool a, ts)
+defineBoolExp (a, ts) dto | dto == TypeBool = return (RefBool a, ts)
+                          | otherwise = strError $ "Expected Int, but found: " ++ repr dto
 
-paramName :: Name -> Alex Parameter
-paramName name = do
-  s <- alexGetUserState
-  let vdicc = s ^. values
-  if any (Map.member name) vdicc
-    then do
-      let val = (Map.! name) . head $ dropWhile (not . Map.member name) vdicc
-      -- Change Nothing to something more appropiate when val is defined.
-      return $ ParamName name (val ^. dataType)
-    else strError $ "Constructor with name " ++ name ++ " is already defined at " ++ show (s ^. values)
-
-
-defineFunc' :: Name -> [Alex DataType] -> (DataType -> Alex (Ref, [ThreeAddressCode])) -> Alex [ThreeAddressCode]
-defineFunc' name [x] f = do
-  x' <- x
-  (ref, code) <- f x'
-  return $ code ++ [TacCopy (RefVar name) ref]
-defineFunc' name dto f = do
-  x' <- sequenceA dto
-  (ref, code) <- f . TypeFun $ reverse x'
-  case ref of
-    RefFunc r ->
-      return $
-        TacFuncLabel name :
-        code
-          ++ [ TacCall r,
-               TacReturn RefSP
-             ]
-    r -> return $ TacFuncLabel name : code ++ [TacReturn ref]
-
-
-defineFunc :: Name -> [Alex DataType] -> (DataType -> Alex (Ref, [ThreeAddressCode])) -> Alex [ThreeAddressCode]
-defineFunc name [x] f = do
-  x' <- x
-  (ref, code) <- f x'
-  return $ TacFuncLabel name : code ++ [TacReturn ref]
+-- | Define Func only for Outer Assigns
+defineFunc ::
+  -- |  Name of the function
+  Name ->
+  -- |  Types of fun
+  [Alex DataType] ->
+  -- |  Def
+  (DataType -> Alex (Ref, [ThreeAddressCode])) ->
+  Alex [ThreeAddressCode]
+defineFunc name [x'] _ = do
+  x <- x'
+  strError $ "Can not have global constants, please declare using unit: " ++ name ++ ":: () -> " ++ repr x ++ " = definition"
 defineFunc name dto f = do
   x' <- sequenceA dto
-  (ref, code) <- f . TypeFun $ reverse x'
+  let x'' = TypeFun $ reverse x'
+  s <- alexGetUserState
+  alexSetUserState $ over values (\(y : ys) -> Map.insert name x'' y : ys) s
+  (ref, code) <- f x''
   case ref of
     RefFunc r ->
       return $
@@ -253,7 +262,24 @@ defineFunc name dto f = do
           ++ [ TacCall r,
                TacReturn RefSP
              ]
-    r -> return $ TacFuncLabel name : code ++ [TacReturn ref]
+    _ -> return $ TacFuncLabel name : code ++ [TacReturn ref]
+
+-- | Define Func only for Inner assigns (statements)
+defineFunc' ::
+  -- | Name of the function
+  Name ->
+  -- | Types of fun
+  [Alex DataType] ->
+  -- | Def
+  (DataType -> Alex (Ref, [ThreeAddressCode])) ->
+  Alex [ThreeAddressCode]
+defineFunc' name [x] f = do
+  x' <- x
+  s <- alexGetUserState
+  alexSetUserState $ over values (\(y : ys) -> Map.insert name x' y : ys) s
+  (ref, code) <- f x'
+  return $ code ++ [TacCopy (RefVar name) ref]
+defineFunc' a b c = defineFunc a b c
 
 paramDef :: DataType -> Ref -> DataType -> Alex (Ref, [ThreeAddressCode])
 paramDef d r d'
@@ -265,3 +291,26 @@ paramDef d r d'
         ++ show d
         ++ "\n\t\t     Got: "
         ++ show d'
+
+functionDef :: [Name] -> Alex [ThreeAddressCode] -> (DataType -> Alex (Ref, [ThreeAddressCode])) -> DataType -> Alex (Ref, [ThreeAddressCode])
+functionDef names mcode def (TypeFun xs)
+  | length xs <= length names =
+    strError $ "Defined more parameters than the function has: " ++ repr (TypeFun xs) ++ "; with parameters: " ++ unwords names
+  | otherwise =
+    do
+      s <- newContext
+      let s'' = over values (\(_:vs) -> Map.fromList (zip names xs):vs) s
+      alexSetUserState s''
+      code <- mcode
+      let xs' = drop (length names) xs
+      (ref, code') <- def (if length xs' == 1 then head xs' else TypeFun xs')
+      _ <- removeContext
+      return (ref, code ++ code')
+functionDef [] mcode def x =
+  do
+    _ <- newContext
+    code <- mcode
+    (ref, code') <- def x
+    _ <- removeContext
+    return (ref, code ++ code')
+functionDef _ _ _ _ = strError "Invalid definition of a function."

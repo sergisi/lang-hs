@@ -21,7 +21,7 @@ makeLenses ''Value
 -- the first item, as the list is only consumed and not supplied.
 data AlexUserState = AlexUserState
   { -- | Definitions map. Contains all definition in a point
-    _values :: [Map.Map String Value]
+    _values :: [Map.Map String DataType]
   , _definitions :: [Map.Map String DataDef]
   , _tempRefs :: [String]
   }

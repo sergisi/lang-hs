@@ -3,6 +3,7 @@ module Parser where
 import Lexer
 import ParserData
 import SyntaxAnalysis
+import Control.Applicative (liftA2)
 }
 
 %name calc
@@ -47,6 +48,7 @@ import SyntaxAnalysis
    '<'       { LLess }
    '>'       { LGreater }
    "case"    { LCase }
+   "()"      { LUnit }
    "::"      { LTypeDef }
    "Real"    { LDefReal }
    "Int"     { LDefInt }
@@ -54,15 +56,16 @@ import SyntaxAnalysis
    "Char"    { LDefChar }
    "->"      { LDefFunc }
    "data"    { LData }
-   "return"  { LReturn }
+   "fun"     { LFun }
    ','       { LComma }
 
 
 
-
-%left '+' '-' '|' '^'
-%left '*' '/' '%' '&' "<<" ">>" "div"
-%left "cast" "real" '~'
+%nonassoc '<' '>' ">=" "<=" "==" "!="
+%left '+' '-' '|' '^' "||" '^'
+%left '*' '/' '%' '&' "<<" ">>" "div" "&&"
+%left "cast" "real" '~' '!'
+%right "->"
 %%
 
 Line :: { [ ThreeAddressCode ] }
@@ -75,9 +78,9 @@ Assign :: { [ThreeAddressCode] }
 Assign : "data" name '=' DataDef            {% defineData $2 $4 }
        | name "::" Fun  '=' Def             {% defineFunc $1 $3 $5}
 
-Statement :: { [ThreeAddressCode] }
-Statement : "data" name '=' DataDef         {% defineData $2 $4 }
-          | name "::" Fun  '=' Def          {% defineFunc' $1 $3 $5}
+Statement :: {Alex [ThreeAddressCode] }
+Statement : "data" name '=' DataDef         { defineData $2 $4 }
+          | name "::" Fun  '=' Def          { defineFunc' $1 $3 $5}
 
 DataDef :: { [Name -> Alex MultDef] }
 DataDef : DataDef '|' MultType { $3 : $1 }
@@ -96,6 +99,7 @@ Type : "Real"      { return TypeReal }
      | "Int"       { return TypeInt }
      | "Bool"      { return TypeBool }
      | "Char"      { return TypeChar }
+     | "()"        { return TypeUnit }
      | name        { defineTypeName $1}
      | '(' Fun ')' { fmap (TypeFun . reverse) . sequenceA $ $2 }
 
@@ -112,23 +116,25 @@ Parameters : Parameters '(' Def ')'        { $3 : $1 }
            | Parameters int                { paramDef TypeInt (RefInt (ConstantInt $2)) : $1 }
            | Parameters bool               { paramDef TypeBool (RefBool (ConstantBool $2)) : $1 }
            | Parameters real               { paramDef TypeReal (RefReal (ConstantReal $2)) : $1 }
+           | Parameters "()"               { paramDef TypeUnit unit : $1}
            | {- empty -}                   { [] }
 
 Def :: { DataType -> Alex (Ref, [ThreeAddressCode]) }
-Def : IntExp             { defineIntExp $1 }
-    | RealExp            { defineRealExp $1 }
-    | BoolExp            { defineBoolExp $1 }
-    | name Parameters    { applyFunc $1 $2 }
-    | FunctionDef        { const $ return (RefSP, []) }
+Def : IntExp                               { defineIntExp $1 }
+    | RealExp                              { defineRealExp $1 }
+    | BoolExp                              { defineBoolExp $1 }
+    | name Parameters                      { applyFunc $1 $2 }
+    | "fun" Names '{' Statements Def '}'   { functionDef $2 $4 $5 }
+    | "()"                                 { const $ return (unit, []) }
+    -- | if
+    -- | while
+    -- | repeat until
+    -- | for
 
-FunctionDef :: { Exp }
-FunctionDef : Names '{' Statements '}'   { TNone }
 
-Statements :: { [ThreeAddressCode] }
-Statements : Statements ';' Statement { $1 ++ $3 }
-           | Statements ';'           { $1 }
-           | Statement                { $1 }
-           | {- empty -}              { [] }
+Statements :: { Alex [ThreeAddressCode] }
+Statements : Statements Statement ';' { liftA2 (++) $1 $2 }
+           | {- empty -}              { return [] }
 
 IntExp :: { (TacInt, [ThreeAddressCode]) }
 IntExp : IntExp '+'   IntExp   {% getIntExp $1 IntOpSum $3 }

@@ -63,9 +63,10 @@ $white+    { skip }
 "->"            { tk LDefFunc }
 "::"            { tk LTypeDef }
 "case"          { tk LCase }
-"return"        { tk LReturn }
 "data"          { tk LData }
+"fun"           { tk LFun }
 ","             { tk LComma }
+"()"            { tk LUnit }
 \|              { tk LSumType }
 [0-9]+          { token (\(_, _, _, s) len -> LInt . read $ take len s) }
 [0-9]+\.[0-9]+  { token (\(_, _, _, s) len -> LDouble . read $ take len s) }
@@ -106,8 +107,8 @@ data LexerT = LMult
             | LOpenDef
             | LCloseDef
             | LTypeDef
-            | LReturn
             | LData
+            | LFun
             | LSumType
             | LComma
             | LEq
@@ -119,6 +120,7 @@ data LexerT = LMult
             | LBoolAnd
             | LBoolOr
             | LBoolNot
+            | LUnit
             deriving (Show, Eq, Read, Ord)
 
 scanner str = fmap reverse . runAlex str $ loop []

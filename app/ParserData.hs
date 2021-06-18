@@ -27,9 +27,18 @@ data DataType
   | TypeInt
   | TypeReal
   | TypeChar
+  | TypeUnit
   | TypeDef Name
   | TypeFun [DataType]
   deriving (Show, Eq, Ord, Read)
+
+instance Repr DataType where
+  repr dt = case dt of
+    TypeBool -> "Bool"
+    TypeInt -> "Int"
+    TypeChar -> "Char"
+    TypeDef n -> n
+    TypeFun xs -> foldl (\acc x -> acc ++ " -> " ++ repr x) "" $ map repr xs
 
 -- TODO posar el nombre de bytes correctes.
 sizeof :: DataType -> Int
@@ -53,35 +62,6 @@ data DataDef
   = -- | Sum types
     DataDef Name [MultDef]
   deriving (Show, Eq, Ord, Read)
-
-data Parameter
-  = ParamInt TacInt [ThreeAddressCode]
-  | ParamReal TacReal [ThreeAddressCode]
-  | ParamBool TacBool [ThreeAddressCode]
-  | ParamName String DataType
-  deriving (Show, Read, Eq, Ord)
-
-getType :: Parameter -> DataType
-getType p = case p of
-  ParamInt _ _ -> TypeInt
-  ParamBool _ _ -> TypeBool
-  ParamReal _ _ -> TypeReal
-  ParamName _ dt -> dt
-
-getCode :: Parameter -> [ThreeAddressCode]
-getCode p = case p of
-  ParamInt _ xs -> xs
-  ParamBool _ xs -> xs
-  ParamReal _ xs -> xs
-  ParamName _ _ -> []
-
--- TODO  is this even possible.
-paramToRef :: Parameter -> Ref
-paramToRef p = case p of
-  ParamInt r _ -> RefInt r
-  ParamReal r _ -> RefReal r
-  ParamBool r _ -> RefBool r
-  ParamName name _ -> RefVar name
 
 -- TODO Delete
 data Exp
@@ -193,7 +173,7 @@ instance Repr UnaryBoolOp where
 
 data Ref
   = RefVar String
-  | RefInf String Int
+  | RefInf String Int -- a @ 0
   | RefInt TacInt
   | RefReal TacReal
   | RefBool TacBool
@@ -240,6 +220,9 @@ instance Repr String where
 
 type Label = String
 
+unit :: Ref
+unit = RefInt (ConstantInt 0)
+
 data ThreeAddressCode
   = TacHalt
   | -- | Math expressions
@@ -255,9 +238,9 @@ data ThreeAddressCode
   | TacCopy Ref Ref
   | TacLabel Label
   | TacFuncLabel Label
-  | TacGetParam Ref Int
+  | TacGetParam Ref Int -- a := param 1
   | TacPushParam Ref
-  | TacIfExp Ref Label
+  | TacIfExp Ref Label -- if false ref goto label
   | TacReturn Ref
   | TacCall Name
   | TacDefCode Ref ThreeAddressCode

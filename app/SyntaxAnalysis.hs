@@ -27,6 +27,19 @@ strError tok = do
   x <- getLineAndColumn
   alexError $ "Happy error on line and column " ++ show x ++ ": " ++ tok
 
+-- | Wraps function definition
+wrapFunction :: [Name] -> Name -> Name -> [ThreeAddressCode] -> Ref -> (Ref, [ThreeAddressCode])
+wrapFunction params funcName later code ref =
+  ( RefFunc funcName,
+    TacGoto later :
+    TacFuncLabel funcName :
+    zipWith TacGetParam (map RefVar params) [1..]
+      ++ code
+      ++ [ TacReturn ref,
+           TacLabel later
+         ]
+  )
+
 -- | Adds a new Context
 newContext :: Alex AlexUserState
 newContext = do
@@ -284,18 +297,22 @@ functionDef names mcode def (TypeFun xs)
   | otherwise =
     do
       s <- newContext
+      funcName <- getRef
+      later <- getRef
       let s'' = over values (\(_ : vs) -> Map.fromList (zip names xs) : vs) s
       alexSetUserState s''
       code <- mcode
       let xs' = drop (length names) xs
       (ref, code') <- def (if length xs' == 1 then head xs' else TypeFun xs')
       _ <- removeContext
-      return (ref, code ++ code')
+      return $ wrapFunction names funcName later (code ++ code') ref
 functionDef [] mcode def x =
   do
     _ <- newContext
+    funcName <- getRef
+    later <- getRef
     code <- mcode
     (ref, code') <- def x
     _ <- removeContext
-    return (ref, code ++ code')
+    return $ wrapFunction [] funcName later (code ++ code') ref
 functionDef _ _ _ _ = strError "Invalid definition of a function."

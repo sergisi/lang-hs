@@ -8,12 +8,14 @@ import Control.Monad
     when,
   )
 import Data.Map.Strict as Map
+import qualified Data.ByteString.Lazy as LBS
 import Lexer
 import Parser
 import ParserData
 import SyntaxAnalysis
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.Golden (goldenVsString, findByExtension)
 
 funcTests =
   testGroup
@@ -39,6 +41,17 @@ dataTests =
     expected'' = Left "Happy error on line and column (1,13): name B is not defined at [fromList [(\"A\",DataDef \"A\" [])]]"
     alreadyDefined = Left "Happy error on line and column (1,27): Data name Ha is already defined at [fromList [(\"Ha\",DataDef \"Ha\" [MultDef {multName = \"Ha\", parameters = [TypeDef \"Ha\"]}])]]"
 
-tests = testGroup "Tests" [dataTests, funcTests]
+goldenTests = do
+  codeFiles <- findByExtension [".chs"] "./files"
+  return $ testGroup "Language Code to Three Adress Code Tests" 
+    [ goldenVsString 
+        (takeBaseName codeFile)
+        tacFile
+        (runExpression' <$> LBS.readFile codeFile ) 
+    | codeFile <- codeFiles 
+    , let tacFile = replaceExtension codeFile ".tac"
+    ]
+
+tests = testGroup "Tests" [dataTests, funcTests, goldenTests]
 
 main = defaultMain tests

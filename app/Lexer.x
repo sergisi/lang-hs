@@ -67,6 +67,8 @@ $white+    { skip }
 "fun"           { tk LFun }
 ","             { tk LComma }
 "()"            { tk LUnit }
+"if"            { tk LConditional}
+"else"          { tk LElse }
 \|              { tk LSumType }
 [0-9]+          { token (\(_, _, _, s) len -> LInt . read $ take len s) }
 [0-9]+\.[0-9]+  { token (\(_, _, _, s) len -> LDouble . read $ take len s) }
@@ -84,6 +86,8 @@ data LexerT = LMult
             | LMinus
             | LLBrack
             | LRBrack
+            | LConditional
+            | LElse
             | LInt Int
             | LVar String
             | LDouble Double

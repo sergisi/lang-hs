@@ -16,7 +16,7 @@ type Exp = DataType -> Exp'
 
 guardedExp :: DataType -> Exp' -> Exp
 guardedExp d m d'
-  | d /= d' = strError $ "Expected " ++ repr d ++ " but found " ++ repr d'
+  | d /= d' = strError $ "Guarded\nExpected " ++ repr d ++ " but found " ++ repr d'
   | otherwise = m
 
 happyError :: Show s => s -> Alex a
@@ -33,7 +33,7 @@ wrapFunction params funcName later code ref =
   ( RefFunc funcName,
     TacGoto later :
     TacFuncLabel funcName :
-    zipWith TacGetParam (map RefVar params) [1..]
+    zipWith TacGetParam (map RefVar params) [1 ..]
       ++ code
       ++ [ TacReturn ref,
            TacLabel later
@@ -125,7 +125,8 @@ defineConstructor name xs' typeName = do
         else do
           let dataTypes = reverse $ TypeDef typeName : xs
           -- Change Nothing to something more appropiate when val is defined.
-          alexSetUserState $ over values (\(z : zs) -> Map.insert name (TypeFun dataTypes) z : zs) s
+          s' <- alexGetUserState
+          alexSetUserState $ over values (\(z : zs) -> Map.insert name (TypeFun dataTypes) z : zs) s'
           return $ MultDef name dataTypes
     else
       let x = map snd . filter (not . fst) $ zip b xs
@@ -167,6 +168,16 @@ getExp dt e op e' dt'
     (r, code) <- e dt
     (r', code') <- e' dt
     return (ref, code ++ code' ++ [TacOp ref r op r'])
+
+getExp' :: DataType -> DataType -> Exp -> Op -> Exp -> DataType -> Exp'
+getExp' dtRes dtDefs e op e' dt'
+  | dtRes /= dt' = strError $ "Needed " ++ repr dtRes ++ " but found " ++ repr dt'
+  | otherwise = do
+    ref <- getRef <&> RefVar
+    (r, code) <- e dtDefs
+    (r', code') <- e' dtDefs
+    return (ref, code ++ code' ++ [TacOp ref r op r'])
+
 
 getUnaryExp :: DataType -> UnaryOp -> Exp -> DataType -> Exp'
 getUnaryExp dt op e' dt'
@@ -230,7 +241,7 @@ applyFunc name params dtype = do
                 then return (RefVar name, [])
                 else
                   strError $
-                    "Expected value and returned differ: "
+                    "ApplyFunc: Expected value and returned differ: "
                       ++ "\n\t\tExpected: "
                       ++ show dtype
                       ++ "\n\t\tReturned: "
@@ -296,9 +307,9 @@ functionDef names mcode def (TypeFun xs)
     strError $ "Defined more parameters than the function has: " ++ repr (TypeFun xs) ++ "; with parameters: " ++ unwords names
   | otherwise =
     do
-      s <- newContext
       funcName <- getRef
       later <- getRef
+      s <- newContext
       let s'' = over values (\(_ : vs) -> Map.fromList (zip names xs) : vs) s
       alexSetUserState s''
       code <- mcode
@@ -316,3 +327,37 @@ functionDef [] mcode def x =
     _ <- removeContext
     return $ wrapFunction [] funcName later (code ++ code') ref
 functionDef _ _ _ _ = strError "Invalid definition of a function."
+
+-- while :: (acc -> Bool) -> (acc -> acc) -> acc -> acc
+-- if Bool a a
+
+type Statements = Alex [ThreeAddressCode]
+
+defineConditional :: Exp -> Statements -> Exp -> Statements -> Exp -> Exp
+defineConditional boolExp stsThen expThen stsElse expElse dtype =
+  do
+    (refBool, boolCode) <- boolExp TypeBool
+    _ <- newContext
+    codeThen <- stsThen
+    (refThen, codeThen') <- expThen dtype
+    _ <- removeContext
+    _ <- newContext
+    codeElse <- stsElse
+    (refElse, codeElse') <- expElse dtype
+    _ <- removeContext
+    labelElse <- getRef
+    res <- getRef <&> RefVar
+    labelFinal <- getRef
+    return
+      ( res,
+        boolCode
+          ++ TacIfExp refBool labelElse :
+        codeThen ++ codeThen' ++
+        TacCopy res refThen :
+        TacGoto labelFinal :
+        TacLabel labelElse :
+        codeElse ++ codeElse'
+          ++ [ TacCopy res refElse,
+               TacLabel labelFinal
+             ]
+      )

@@ -57,6 +57,8 @@ import Control.Applicative (liftA2)
    "->"      { LDefFunc }
    "data"    { LData }
    "fun"     { LFun }
+   "if"      { LConditional }
+   "else"    { LElse }
    ','       { LComma }
 
 
@@ -127,11 +129,26 @@ Def : IntExp                               { $1 }
     | name Parameters                      { applyFunc $1 $2 }
     | "fun" Names '{' Statements Def '}'   { functionDef $2 $4 $5 }
     | "()"                                 { const $ return (unit, []) }
+    | "if" Def '{' Statements Def '}'
+      "else" '{' Statements Def '}'
+      { defineConditional $2 $4 $5 $9 $10 }
     | '(' Def ')'                          { $2 }
     -- | if
     -- | while
     -- | repeat until
     -- | for
+
+{-
+
+if  cond {
+cosa;
+cosa2;
+cosa3;
+cosa + cosa2 + cosa3
+}
+
+
+-}
 
 
 Statements :: { Alex [ThreeAddressCode] }
@@ -144,12 +161,12 @@ IntExp : Def '+'   Def   { getExp TypeInt $1 OpSum $3 }
        | Def '*'   Def   { getExp TypeInt $1 OpMult $3 }
        | Def '%'   Def   { getExp TypeInt $1 OpMod $3 }
        | Def "div" Def   { getExp TypeInt $1 OpDiv $3 }
-       | Def "=="  Def   { getExp TypeInt $1 OpEq $3}
-       | Def "!="  Def   { getExp TypeInt $1 OpNeq $3}
-       | Def '<'   Def   { getExp TypeInt $1 OpLt $3}
-       | Def "<="  Def   { getExp TypeInt $1 OpLEq $3}
-       | Def '>'   Def   { getExp TypeInt $1 OpGt $3}
-       | Def ">="  Def   { getExp TypeInt $1 OpGEq $3}
+       | Def "=="  Def   { getExp' TypeBool TypeInt $1 OpEq $3}
+       | Def "!="  Def   { getExp' TypeBool TypeInt $1 OpNeq $3}
+       | Def '<'   Def   { getExp' TypeBool TypeInt $1 OpLt $3}
+       | Def "<="  Def   { getExp' TypeBool TypeInt $1 OpLEq $3}
+       | Def '>'   Def   { getExp' TypeBool TypeInt $1 OpGt $3}
+       | Def ">="  Def   { getExp' TypeBool TypeInt $1 OpGEq $3}
        | Def ">>"  Def   { getExp TypeInt $1 OpRightShift $3 }
        | Def "<<"  Def   { getExp TypeInt $1 OpLeftShift $3 }
        | Def '&'   Def   { getExp TypeInt $1 OpBitAnd $3 }
@@ -165,12 +182,12 @@ RealExp : Def '+'   Def   { getExp TypeReal $1 OpSum $3 }
         | Def '-'   Def   { getExp TypeReal $1 OpMinus $3 }
         | Def '*'   Def   { getExp TypeReal $1 OpMult $3 }
         | Def '/'   Def   { getExp TypeReal $1 OpDiv $3 }
-        | Def "=="  Def   { getExp TypeReal $1 OpEq $3}
-        | Def "!="  Def   { getExp TypeReal $1 OpNeq $3}
-        | Def '<'   Def   { getExp TypeReal $1 OpLt $3}
-        | Def "<="  Def   { getExp TypeReal $1 OpLEq $3}
-        | Def '>'   Def   { getExp TypeReal $1 OpGt $3}
-        | Def ">="  Def   { getExp TypeReal $1 OpGEq $3}
+        | Def "=="  Def   { getExp' TypeBool TypeReal $1 OpEq $3}
+        | Def "!="  Def   { getExp' TypeBool TypeReal $1 OpNeq $3}
+        | Def '<'   Def   { getExp' TypeBool TypeReal $1 OpLt $3}
+        | Def "<="  Def   { getExp' TypeBool TypeReal $1 OpLEq $3}
+        | Def '>'   Def   { getExp' TypeBool TypeReal $1 OpGt $3}
+        | Def ">="  Def   { getExp' TypeBool TypeReal $1 OpGEq $3}
         | '-' Def         { getUnaryExp TypeReal UnaryMinus $2 }
         | real            { guardedExp TypeReal ( return (RefConstReal $1, [])) }
 

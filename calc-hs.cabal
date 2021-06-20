@@ -97,4 +97,5 @@ test-suite TestSuite
                       tasty-hunit,
                       tasty-quickcheck,
                       tasty-golden,
-                      bytestring
+                      bytestring,
+                      filepath

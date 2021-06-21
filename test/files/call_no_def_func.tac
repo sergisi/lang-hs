@@ -1,0 +1,1 @@
+Left "Happy error on line and column (3,2): Apply Function name doSomething is not defined"

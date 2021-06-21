@@ -208,11 +208,11 @@ guardVariableApplication params x y
           ++ "\n\t\tNumber of parameters: "
           ++ show (length params)
       )
-  | x /= dtype =
+  | x /= y =
     strError $
       "ApplyFunc: Expected value and returned differ: "
         ++ "\n\t\tExpected: "
-        ++ repr dtype
+        ++ repr y
         ++ "\n\t\tReturned: "
         ++ repr x
   | otherwise = return ()
@@ -235,7 +235,7 @@ curryficateFunction name appliedParams = do
            ]
     )
 
-ifMemberError :: [Map.Map k v] -> k -> Alex ()
+ifMemberError :: [Map.Map String v] -> String -> Alex ()
 ifMemberError vdicc name
   | any (Map.member name) vdicc = return ()
   | otherwise = strError $ "Apply Function name " ++ name ++ " is not defined"
@@ -253,6 +253,26 @@ returnVar name appliedParams = do
          )
      )
 
+returnTypeIsOk :: [DataType] -> DataType -> Alex ()
+returnTypeIsOk [x] y
+  | x /= y =
+    strError $
+      "ApplyFunc: Expected value and returned differ: "
+        ++ "\n\t\tExpected: "
+        ++ repr y
+        ++ "\n\t\tReturned: "
+        ++ repr x
+  | otherwise = return ()
+returnTypeIsOk xs y
+  | TypeFun xs /= y =
+     strError $
+      "ApplyFunc: Expected value and returned differ: "
+        ++ "\n\t\tExpected: "
+        ++ repr y
+        ++ "\n\t\tReturned: "
+        ++ repr (TypeFun xs)
+  | otherwise = return ()
+
 applyFunc :: Name -> [DataType -> Alex (Ref, [ThreeAddressCode])] -> DataType -> Alex (Ref, [ThreeAddressCode])
 applyFunc name params dtype = do
   s <- alexGetUserState
@@ -264,6 +284,7 @@ applyFunc name params dtype = do
       do
         moreParamsThanAppliable xs params
         appliedParams <- zipWithM ($) params xs
+        returnTypeIsOk (drop (length params) xs) dtype
         if length xs - 1 == length params
           then returnVar name appliedParams
           else curryficateFunction name appliedParams

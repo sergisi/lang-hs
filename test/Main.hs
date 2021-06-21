@@ -14,7 +14,11 @@ import ParserData
 import SyntaxAnalysis
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.Golden (goldenVsString, findByExtension)
+import System.FilePath (takeBaseName, replaceExtension)
+import Data.String
 
+funcTests :: TestTree
 funcTests =
   testGroup
     "Creates functions accordingly"
@@ -23,7 +27,8 @@ funcTests =
     ]
   where
     constructor = runAlex "" $ generateMultDef (MultDef "name" [TypeInt, TypeChar, TypeReal, TypeFun [TypeInt, TypeBool], TypeBool]) 0
-    expected = Right [TacFuncLabel "name", TacIntCopy (RefInf "temp0" 0) (ConstantInt 0), TacGetParam (RefInf "temp0" 1) 0, TacGetParam (RefInf "temp0" 3) 1, TacGetParam (RefInf "temp0" 4) 2, TacGetParam (RefInf "temp0" 7) 3, TacReturn (RefVar "temp0")]
+    expected = Right [TacFuncLabel "name", TacCopy (RefInf "temp0" 0) (RefConstInt 0), TacGetParam (RefInf "temp0" 1) 0, TacGetParam (RefInf "temp0" 3) 1, TacGetParam (RefInf "temp0" 4) 2, TacGetParam (RefInf "temp0" 7) 3, TacReturn (RefVar "temp0")]
+
 
 dataTests =
   testGroup
@@ -34,11 +39,27 @@ dataTests =
       testCase "Name already defined" $ alreadyDefined @=? runExpression' "data Ha = Ha;data Ha = Ha;"
     ]
   where
-    expected = Right AlexUserState {_values = [fromList [("Ha", Value {_dataType = TypeFun [TypeInt, TypeFun [TypeReal, TypeBool], TypeDef "Ha"], _value = Nothing}), ("Haha", Value {_dataType = TypeFun [TypeDef "Ha"], _value = Nothing})]], _definitions = [fromList [("Ha", DataDef "Ha" [MultDef {multName = "Haha", parameters = [TypeDef "Ha"]}, MultDef {multName = "Ha", parameters = [TypeInt, TypeFun [TypeReal, TypeBool], TypeDef "Ha"]}])]], _tempRefs = ["temp2"]}
-    expected' = Right AlexUserState {_values = [fromList [("Empty", Value {_dataType = TypeFun [TypeDef "List"], _value = Nothing}), ("List", Value {_dataType = TypeFun [TypeInt, TypeDef "List", TypeDef "List"], _value = Nothing})]], _definitions = [fromList [("List", DataDef "List" [MultDef {multName = "Empty", parameters = [TypeDef "List"]}, MultDef {multName = "List", parameters = [TypeInt, TypeDef "List", TypeDef "List"]}])]], _tempRefs = ["temp2"]}
+    expected = Right AlexUserState {_values = [fromList [("Ha", TypeFun [TypeInt, TypeFun [TypeReal, TypeBool], TypeDef "Ha"]), ("Haha", TypeFun [TypeDef "Ha"])]], _definitions = [fromList [("Ha", DataDef "Ha" [MultDef {multName = "Haha", parameters = [TypeDef "Ha"]}, MultDef {multName = "Ha", parameters = [TypeInt, TypeFun [TypeReal, TypeBool], TypeDef "Ha"]}])]], _tempRefs = ["temp2"]}
+    expected' = Right AlexUserState {_values = [fromList [("Empty", TypeFun [TypeDef "List"]), ("List", TypeFun [TypeInt, TypeDef "List", TypeDef "List"])]], _definitions = [fromList [("List", DataDef "List" [MultDef {multName = "Empty", parameters = [TypeDef "List"]}, MultDef {multName = "List", parameters = [TypeInt, TypeDef "List", TypeDef "List"]}])]], _tempRefs = ["temp2"]}
     expected'' = Left "Happy error on line and column (1,13): name B is not defined at [fromList [(\"A\",DataDef \"A\" [])]]"
     alreadyDefined = Left "Happy error on line and column (1,27): Data name Ha is already defined at [fromList [(\"Ha\",DataDef \"Ha\" [MultDef {multName = \"Ha\", parameters = [TypeDef \"Ha\"]}])]]"
 
-tests = testGroup "Tests" [dataTests, funcTests]
+goldenTests :: IO TestTree 
+goldenTests = do
+  codeFiles <- findByExtension [".chs"] "./test/files"
+  return $ testGroup "Language Code to Three Adress Code Tests" 
+    [ goldenVsString 
+        (takeBaseName codeFile)
+        tacFile
+        (fromString . show . runExpression <$> readFile codeFile) 
+    | codeFile <- codeFiles 
+    , let tacFile = replaceExtension codeFile ".tac"
+    ] 
+    
 
-main = defaultMain tests
+tests :: IO TestTree
+tests = do 
+  gTests <- goldenTests
+  return $ testGroup "Tests" [gTests, funcTests, dataTests]
+
+main = defaultMain =<< tests

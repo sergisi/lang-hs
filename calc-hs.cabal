@@ -95,4 +95,7 @@ test-suite TestSuite
                       containers,
                       tasty,
                       tasty-hunit,
-                      tasty-quickcheck
+                      tasty-quickcheck,
+                      tasty-golden,
+                      bytestring,
+                      filepath

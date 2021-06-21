@@ -178,7 +178,6 @@ getExp' dtRes dtDefs e op e' dt'
     (r', code') <- e' dtDefs
     return (ref, code ++ code' ++ [TacOp ref r op r'])
 
-
 getUnaryExp :: DataType -> UnaryOp -> Exp -> DataType -> Exp'
 getUnaryExp dt op e' dt'
   | dt /= dt' = strError $ "Needed " ++ repr dt ++ " but found " ++ repr dt'
@@ -187,74 +186,91 @@ getUnaryExp dt op e' dt'
     (r', code') <- e' dt
     return (ref, code' ++ [TacUnary ref op r'])
 
+moreParamsThanAppliable :: [a] -> [b] -> Alex ()
+moreParamsThanAppliable xs params =
+  if length xs <= length params
+    then
+      strError $
+        "Applied more arguments than needed:"
+          ++ "\n\t\tApplied: "
+          ++ show (length params)
+          ++ "\n\t\t    Got: "
+          ++ show (length xs)
+    else return ()
+
+guardVariableApplication :: (Eq b, Repr b) => [a] -> b -> b -> Alex ()
+guardVariableApplication params x y
+  | not (null params) =
+    strError
+      ( "Applied Function to value: "
+          ++ "\n\t\t               Value: "
+          ++ repr x
+          ++ "\n\t\tNumber of parameters: "
+          ++ show (length params)
+      )
+  | x /= dtype =
+    strError $
+      "ApplyFunc: Expected value and returned differ: "
+        ++ "\n\t\tExpected: "
+        ++ repr dtype
+        ++ "\n\t\tReturned: "
+        ++ repr x
+  | otherwise = return ()
+
+curryficateFunction :: Name -> [(Ref, [ThreeAddressCode])] -> Exp'
+curryficateFunction name appliedParams = do
+  funcName <- getRef
+  later <- getRef
+  -- Idea:
+  --   goto later; Func funcName [Def ...] label later;
+  return
+    ( RefFunc funcName,
+      TacGoto later :
+      TacFuncLabel funcName :
+      concatMap snd appliedParams
+        ++ map (TacPushParam . fst) appliedParams
+        ++ [ TacCall name,
+             TacReturn RefSP,
+             TacLabel later
+           ]
+    )
+
+ifMemberError :: [Map.Map k v] -> k -> Alex ()
+ifMemberError vdicc name
+  | any (Map.member name) vdicc = return ()
+  | otherwise = strError $ "Apply Function name " ++ name ++ " is not defined"
+
+returnVar :: Name -> [(Ref, [ThreeAddressCode])] -> Exp'
+returnVar name appliedParams = do
+   r <- getRef <&> RefVar
+   return
+     ( r,
+       reverse
+         ( TacCopy r RefSP :
+           TacCall name :
+           map (TacPushParam . fst) appliedParams
+             ++ concatMap snd appliedParams
+         )
+     )
+
 applyFunc :: Name -> [DataType -> Alex (Ref, [ThreeAddressCode])] -> DataType -> Alex (Ref, [ThreeAddressCode])
 applyFunc name params dtype = do
   s <- alexGetUserState
   let vdicc = s ^. values
-  if any (Map.member name) vdicc
-    then do
-      let val = (Map.! name) . head $ dropWhile (not . Map.member name) vdicc
-      case val of
-        TypeFun xs ->
-          if length xs < length params
-            then
-              strError $
-                "Applied more arguments than needed:"
-                  ++ "\n\t\tApplied: "
-                  ++ show (length params)
-                  ++ "\n\t\t    Got: "
-                  ++ show (length xs)
-            else do
-              appliedParams <- zipWithM ($) params xs
-              if length xs - 1 == length params
-                then do
-                  r <- getRef <&> RefVar
-                  return
-                    ( r,
-                      reverse
-                        ( TacCopy r RefSP :
-                          TacCall name :
-                          map (TacPushParam . fst) appliedParams
-                            ++ concatMap snd appliedParams
-                        )
-                    )
-                else do
-                  funcName <- getRef
-                  later <- getRef
-                  -- Idea:
-                  --   goto later; Func funcName [Def ...] label later;
-                  return
-                    ( RefFunc funcName,
-                      TacGoto later :
-                      TacFuncLabel funcName :
-                      concatMap snd appliedParams
-                        ++ map (TacPushParam . fst) appliedParams
-                        ++ [ TacCall name,
-                             TacReturn RefSP,
-                             TacLabel later
-                           ]
-                    )
-        x ->
-          if null params -- Synonim
-            then
-              if x == dtype
-                then return (RefVar name, [])
-                else
-                  strError $
-                    "ApplyFunc: Expected value and returned differ: "
-                      ++ "\n\t\tExpected: "
-                      ++ show dtype
-                      ++ "\n\t\tReturned: "
-                      ++ show x
-            else
-              strError
-                ( "Applied Function to value: "
-                    ++ "\n\t\t               Value: "
-                    ++ show x
-                    ++ "\n\t\tNumber of parameters: "
-                    ++ show (length params)
-                )
-    else strError $ "Apply Function name " ++ name ++ " is not defined"
+  ifMemberError vdicc name
+  let val = (Map.! name) . head $ dropWhile (not . Map.member name) vdicc
+  case val of
+    TypeFun xs ->
+      do
+        moreParamsThanAppliable xs params
+        appliedParams <- zipWithM ($) params xs
+        if length xs - 1 == length params
+          then returnVar name appliedParams
+          else curryficateFunction name appliedParams
+
+    x -> do
+      guardVariableApplication params x dtype
+      return (RefVar name, [])
 
 -- | Define Func only for Outer Assigns
 defineFunc ::
@@ -352,8 +368,8 @@ defineConditional boolExp stsThen expThen stsElse expElse dtype =
       ( res,
         boolCode
           ++ TacIfExp refBool labelElse :
-        codeThen ++ codeThen' ++
-        TacCopy res refThen :
+        codeThen ++ codeThen'
+          ++ TacCopy res refThen :
         TacGoto labelFinal :
         TacLabel labelElse :
         codeElse ++ codeElse'

@@ -195,7 +195,7 @@ applyFunc name params dtype = do
     then do
       let val = (Map.! name) . head $ dropWhile (not . Map.member name) vdicc
       case val of
-        TypeFun xs -> do
+        TypeFun xs ->
           if length xs <= length params
             then
               strError $

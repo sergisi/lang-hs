@@ -398,3 +398,39 @@ defineConditional boolExp stsThen expThen stsElse expElse dtype =
                TacLabel labelFinal
              ]
       )
+
+whileDef :: Exp -> Exp -> Exp -> Exp
+whileDef conditionFunc iniAcc accFunc dtype = 
+  do
+    (refCond, codeCond) <- conditionFunc (TypeFun [dtype, TypeBool])
+    nameCond <- getStringOfRef refCond
+    (refIniAcc, codeIniAcc) <- iniAcc dtype
+    (refFuncAcc, codeAcc) <- accFunc (TypeFun [dtype, dtype])
+    nameFuncAcc <- getStringOfRef refFuncAcc
+    refAcc <- getRef <&> RefVar
+    bucle <- getRef
+    out <- getRef
+    return (refAcc,   codeIniAcc 
+                      ++ codeCond 
+                      ++ codeAcc
+                      ++ [ TacCopy refAcc refIniAcc,
+                      TacLabel bucle,
+                      TacPushParam refAcc, 
+                      TacCall nameCond,
+                      TacIfExp RefSP out,
+                      TacPushParam refAcc,
+                      TacCall nameFuncAcc,
+                      TacCopy refAcc RefSP,
+                      TacGoto bucle,
+                      TacLabel  out
+                      ]
+              )
+              
+getStringOfRef :: Ref -> Alex String 
+getStringOfRef ref = case ref of
+  RefVar n -> return n
+  RefFunc n -> return n
+  _ -> strError "Expected: Function, Got: Constant"
+
+  
+

@@ -60,6 +60,7 @@ import Control.Applicative (liftA2)
    "if"      { LConditional }
    "else"    { LElse }
    ','       { LComma }
+   "while"   { LWhile }
 
 
 
@@ -133,7 +134,7 @@ Def : IntExp                               { $1 }
       "else" '{' Statements Def '}'
       { defineConditional $2 $4 $5 $9 $10 }
     | '(' Def ')'                          { $2 }
-    -- | if
+    | "while" Def "with" Def "do" Def      { whileDef $2 $4 $6 }
     -- | while
     -- | repeat until
     -- | for

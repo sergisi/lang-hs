@@ -25,6 +25,7 @@ data DataType
   | TypeChar
   | TypeUnit
   | TypeDef Name
+  | TypeArray DataType
   | TypeFun [DataType]
   deriving (Show, Eq, Ord, Read)
 
@@ -48,6 +49,7 @@ sizeof x = case x of
   TypeChar -> 1
   TypeDef _ -> 1
   TypeFun _ -> 1
+  TypeArray _ -> 1
 
 data MultDef = MultDef
   { multName :: Name,

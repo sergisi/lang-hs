@@ -1,1 +1,321 @@
-Right [TacFuncLabel "jj",TacGoto "temp100",TacFuncLabel "temp99",TacGetParam (RefVar "a") 1,TacUnary (RefVar "temp101") UnaryMinus (RefVar "a"),TacReturn (RefVar "temp101"),TacLabel "temp100",TacCall (RefVar "temp99"),TacReturn RefSP,TacFuncLabel "hh",TacGoto "temp97",TacFuncLabel "temp96",TacGetParam (RefVar "a") 1,TacUnary (RefVar "temp98") UnaryComplement (RefVar "a"),TacReturn (RefVar "temp98"),TacLabel "temp97",TacCall (RefVar "temp96"),TacReturn RefSP,TacFuncLabel "gg",TacGoto "temp94",TacFuncLabel "temp93",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp95") (RefVar "a") OpBitXOR (RefVar "b"),TacReturn (RefVar "temp95"),TacLabel "temp94",TacCall (RefVar "temp93"),TacReturn RefSP,TacFuncLabel "ff",TacGoto "temp91",TacFuncLabel "temp90",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp92") (RefVar "a") OpBitAnd (RefVar "b"),TacReturn (RefVar "temp92"),TacLabel "temp91",TacCall (RefVar "temp90"),TacReturn RefSP,TacFuncLabel "dd",TacGoto "temp88",TacFuncLabel "temp87",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp89") (RefVar "a") OpLeftShift (RefVar "b"),TacReturn (RefVar "temp89"),TacLabel "temp88",TacCall (RefVar "temp87"),TacReturn RefSP,TacFuncLabel "ss",TacGoto "temp85",TacFuncLabel "temp84",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp86") (RefVar "a") OpRightShift (RefVar "b"),TacReturn (RefVar "temp86"),TacLabel "temp85",TacCall (RefVar "temp84"),TacReturn RefSP,TacFuncLabel "aa",TacGoto "temp82",TacFuncLabel "temp81",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp83") (RefVar "a") OpGEq (RefVar "b"),TacReturn (RefVar "temp83"),TacLabel "temp82",TacCall (RefVar "temp81"),TacReturn RefSP,TacFuncLabel "pp",TacGoto "temp79",TacFuncLabel "temp78",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp80") (RefVar "a") OpLEq (RefVar "b"),TacReturn (RefVar "temp80"),TacLabel "temp79",TacCall (RefVar "temp78"),TacReturn RefSP,TacFuncLabel "oo",TacGoto "temp76",TacFuncLabel "temp75",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp77") (RefVar "a") OpGt (RefVar "b"),TacReturn (RefVar "temp77"),TacLabel "temp76",TacCall (RefVar "temp75"),TacReturn RefSP,TacFuncLabel "ii",TacGoto "temp73",TacFuncLabel "temp72",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp74") (RefVar "a") OpLt (RefVar "b"),TacReturn (RefVar "temp74"),TacLabel "temp73",TacCall (RefVar "temp72"),TacReturn RefSP,TacFuncLabel "uu",TacGoto "temp70",TacFuncLabel "temp69",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp71") (RefVar "a") OpNeq (RefVar "b"),TacReturn (RefVar "temp71"),TacLabel "temp70",TacCall (RefVar "temp69"),TacReturn RefSP,TacFuncLabel "yy",TacGoto "temp67",TacFuncLabel "temp66",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp68") (RefVar "a") OpEq (RefVar "b"),TacReturn (RefVar "temp68"),TacLabel "temp67",TacCall (RefVar "temp66"),TacReturn RefSP,TacFuncLabel "tt",TacGoto "temp64",TacFuncLabel "temp63",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp65") (RefVar "a") OpDiv (RefVar "b"),TacReturn (RefVar "temp65"),TacLabel "temp64",TacCall (RefVar "temp63"),TacReturn RefSP,TacFuncLabel "rr",TacGoto "temp61",TacFuncLabel "temp60",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp62") (RefVar "a") OpMod (RefVar "b"),TacReturn (RefVar "temp62"),TacLabel "temp61",TacCall (RefVar "temp60"),TacReturn RefSP,TacFuncLabel "ee",TacGoto "temp58",TacFuncLabel "temp57",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp59") (RefVar "a") OpMult (RefVar "b"),TacReturn (RefVar "temp59"),TacLabel "temp58",TacCall (RefVar "temp57"),TacReturn RefSP,TacFuncLabel "ww",TacGoto "temp55",TacFuncLabel "temp54",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp56") (RefVar "a") OpMinus (RefVar "b"),TacReturn (RefVar "temp56"),TacLabel "temp55",TacCall (RefVar "temp54"),TacReturn RefSP,TacFuncLabel "qq",TacGoto "temp52",TacFuncLabel "temp51",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp53") (RefConstInt 1) OpSum (RefConstInt 1),TacReturn (RefVar "temp53"),TacLabel "temp52",TacCall (RefVar "temp51"),TacReturn RefSP,TacFuncLabel "j",TacGoto "temp49",TacFuncLabel "temp48",TacGetParam (RefVar "a") 1,TacUnary (RefVar "temp50") UnaryMinus (RefConstInt 1),TacReturn (RefVar "temp50"),TacLabel "temp49",TacCall (RefVar "temp48"),TacReturn RefSP,TacFuncLabel "h",TacGoto "temp46",TacFuncLabel "temp45",TacGetParam (RefVar "a") 1,TacUnary (RefVar "temp47") UnaryComplement (RefConstInt 1),TacReturn (RefVar "temp47"),TacLabel "temp46",TacCall (RefVar "temp45"),TacReturn RefSP,TacFuncLabel "g",TacGoto "temp43",TacFuncLabel "temp42",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp44") (RefConstInt 1) OpBitXOR (RefConstInt 1),TacReturn (RefVar "temp44"),TacLabel "temp43",TacCall (RefVar "temp42"),TacReturn RefSP,TacFuncLabel "d",TacGoto "temp40",TacFuncLabel "temp39",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp41") (RefConstInt 1) OpBitAnd (RefConstInt 1),TacReturn (RefVar "temp41"),TacLabel "temp40",TacCall (RefVar "temp39"),TacReturn RefSP,TacFuncLabel "s",TacGoto "temp37",TacFuncLabel "temp36",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp38") (RefConstInt 1) OpLeftShift (RefConstInt 1),TacReturn (RefVar "temp38"),TacLabel "temp37",TacCall (RefVar "temp36"),TacReturn RefSP,TacFuncLabel "f",TacGoto "temp34",TacFuncLabel "temp33",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp35") (RefConstInt 1) OpRightShift (RefConstInt 1),TacReturn (RefVar "temp35"),TacLabel "temp34",TacCall (RefVar "temp33"),TacReturn RefSP,TacFuncLabel "a",TacGoto "temp31",TacFuncLabel "temp30",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp32") (RefConstInt 1) OpGEq (RefConstInt 1),TacReturn (RefVar "temp32"),TacLabel "temp31",TacCall (RefVar "temp30"),TacReturn RefSP,TacFuncLabel "p",TacGoto "temp28",TacFuncLabel "temp27",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp29") (RefConstInt 1) OpLEq (RefConstInt 1),TacReturn (RefVar "temp29"),TacLabel "temp28",TacCall (RefVar "temp27"),TacReturn RefSP,TacFuncLabel "o",TacGoto "temp25",TacFuncLabel "temp24",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp26") (RefConstInt 1) OpGt (RefConstInt 1),TacReturn (RefVar "temp26"),TacLabel "temp25",TacCall (RefVar "temp24"),TacReturn RefSP,TacFuncLabel "i",TacGoto "temp22",TacFuncLabel "temp21",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp23") (RefConstInt 1) OpLt (RefConstInt 1),TacReturn (RefVar "temp23"),TacLabel "temp22",TacCall (RefVar "temp21"),TacReturn RefSP,TacFuncLabel "u",TacGoto "temp19",TacFuncLabel "temp18",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp20") (RefConstInt 1) OpNeq (RefConstInt 1),TacReturn (RefVar "temp20"),TacLabel "temp19",TacCall (RefVar "temp18"),TacReturn RefSP,TacFuncLabel "y",TacGoto "temp16",TacFuncLabel "temp15",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp17") (RefConstInt 1) OpEq (RefConstInt 1),TacReturn (RefVar "temp17"),TacLabel "temp16",TacCall (RefVar "temp15"),TacReturn RefSP,TacFuncLabel "t",TacGoto "temp13",TacFuncLabel "temp12",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp14") (RefConstInt 1) OpDiv (RefConstInt 1),TacReturn (RefVar "temp14"),TacLabel "temp13",TacCall (RefVar "temp12"),TacReturn RefSP,TacFuncLabel "r",TacGoto "temp10",TacFuncLabel "temp9",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp11") (RefConstInt 1) OpMod (RefConstInt 1),TacReturn (RefVar "temp11"),TacLabel "temp10",TacCall (RefVar "temp9"),TacReturn RefSP,TacFuncLabel "e",TacGoto "temp7",TacFuncLabel "temp6",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp8") (RefConstInt 1) OpMult (RefConstInt 1),TacReturn (RefVar "temp8"),TacLabel "temp7",TacCall (RefVar "temp6"),TacReturn RefSP,TacFuncLabel "w",TacGoto "temp4",TacFuncLabel "temp3",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp5") (RefConstInt 1) OpMinus (RefConstInt 1),TacReturn (RefVar "temp5"),TacLabel "temp4",TacCall (RefVar "temp3"),TacReturn RefSP,TacFuncLabel "q",TacGoto "temp1",TacFuncLabel "temp0",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp2") (RefConstInt 1) OpSum (RefConstInt 1),TacReturn (RefVar "temp2"),TacLabel "temp1",TacCall (RefVar "temp0"),TacReturn RefSP]
+Func jj
+    goto temp100
+Func temp99
+    a := param 1
+    temp101 := - a
+    return temp101
+Label temp100
+    call temp99
+    return $SP
+Func hh
+    goto temp97
+Func temp96
+    a := param 1
+    temp98 := ~ a
+    return temp98
+Label temp97
+    call temp96
+    return $SP
+Func gg
+    goto temp94
+Func temp93
+    b := param 1
+    a := param 2
+    temp95 := a ^ b
+    return temp95
+Label temp94
+    call temp93
+    return $SP
+Func ff
+    goto temp91
+Func temp90
+    b := param 1
+    a := param 2
+    temp92 := a & b
+    return temp92
+Label temp91
+    call temp90
+    return $SP
+Func dd
+    goto temp88
+Func temp87
+    b := param 1
+    a := param 2
+    temp89 := a << b
+    return temp89
+Label temp88
+    call temp87
+    return $SP
+Func ss
+    goto temp85
+Func temp84
+    b := param 1
+    a := param 2
+    temp86 := a >> b
+    return temp86
+Label temp85
+    call temp84
+    return $SP
+Func aa
+    goto temp82
+Func temp81
+    b := param 1
+    a := param 2
+    temp83 := a >= b
+    return temp83
+Label temp82
+    call temp81
+    return $SP
+Func pp
+    goto temp79
+Func temp78
+    b := param 1
+    a := param 2
+    temp80 := a <= b
+    return temp80
+Label temp79
+    call temp78
+    return $SP
+Func oo
+    goto temp76
+Func temp75
+    b := param 1
+    a := param 2
+    temp77 := a > b
+    return temp77
+Label temp76
+    call temp75
+    return $SP
+Func ii
+    goto temp73
+Func temp72
+    b := param 1
+    a := param 2
+    temp74 := a < b
+    return temp74
+Label temp73
+    call temp72
+    return $SP
+Func uu
+    goto temp70
+Func temp69
+    b := param 1
+    a := param 2
+    temp71 := a != b
+    return temp71
+Label temp70
+    call temp69
+    return $SP
+Func yy
+    goto temp67
+Func temp66
+    b := param 1
+    a := param 2
+    temp68 := a == b
+    return temp68
+Label temp67
+    call temp66
+    return $SP
+Func tt
+    goto temp64
+Func temp63
+    b := param 1
+    a := param 2
+    temp65 := a // b
+    return temp65
+Label temp64
+    call temp63
+    return $SP
+Func rr
+    goto temp61
+Func temp60
+    b := param 1
+    a := param 2
+    temp62 := a % b
+    return temp62
+Label temp61
+    call temp60
+    return $SP
+Func ee
+    goto temp58
+Func temp57
+    b := param 1
+    a := param 2
+    temp59 := a * b
+    return temp59
+Label temp58
+    call temp57
+    return $SP
+Func ww
+    goto temp55
+Func temp54
+    b := param 1
+    a := param 2
+    temp56 := a - b
+    return temp56
+Label temp55
+    call temp54
+    return $SP
+Func qq
+    goto temp52
+Func temp51
+    b := param 1
+    a := param 2
+    temp53 := 1 + 1
+    return temp53
+Label temp52
+    call temp51
+    return $SP
+Func j
+    goto temp49
+Func temp48
+    a := param 1
+    temp50 := - 1
+    return temp50
+Label temp49
+    call temp48
+    return $SP
+Func h
+    goto temp46
+Func temp45
+    a := param 1
+    temp47 := ~ 1
+    return temp47
+Label temp46
+    call temp45
+    return $SP
+Func g
+    goto temp43
+Func temp42
+    a := param 1
+    temp44 := 1 ^ 1
+    return temp44
+Label temp43
+    call temp42
+    return $SP
+Func d
+    goto temp40
+Func temp39
+    a := param 1
+    temp41 := 1 & 1
+    return temp41
+Label temp40
+    call temp39
+    return $SP
+Func s
+    goto temp37
+Func temp36
+    a := param 1
+    temp38 := 1 << 1
+    return temp38
+Label temp37
+    call temp36
+    return $SP
+Func f
+    goto temp34
+Func temp33
+    a := param 1
+    temp35 := 1 >> 1
+    return temp35
+Label temp34
+    call temp33
+    return $SP
+Func a
+    goto temp31
+Func temp30
+    a := param 1
+    temp32 := 1 >= 1
+    return temp32
+Label temp31
+    call temp30
+    return $SP
+Func p
+    goto temp28
+Func temp27
+    a := param 1
+    temp29 := 1 <= 1
+    return temp29
+Label temp28
+    call temp27
+    return $SP
+Func o
+    goto temp25
+Func temp24
+    a := param 1
+    temp26 := 1 > 1
+    return temp26
+Label temp25
+    call temp24
+    return $SP
+Func i
+    goto temp22
+Func temp21
+    a := param 1
+    temp23 := 1 < 1
+    return temp23
+Label temp22
+    call temp21
+    return $SP
+Func u
+    goto temp19
+Func temp18
+    a := param 1
+    temp20 := 1 != 1
+    return temp20
+Label temp19
+    call temp18
+    return $SP
+Func y
+    goto temp16
+Func temp15
+    a := param 1
+    temp17 := 1 == 1
+    return temp17
+Label temp16
+    call temp15
+    return $SP
+Func t
+    goto temp13
+Func temp12
+    a := param 1
+    temp14 := 1 // 1
+    return temp14
+Label temp13
+    call temp12
+    return $SP
+Func r
+    goto temp10
+Func temp9
+    a := param 1
+    temp11 := 1 % 1
+    return temp11
+Label temp10
+    call temp9
+    return $SP
+Func e
+    goto temp7
+Func temp6
+    a := param 1
+    temp8 := 1 * 1
+    return temp8
+Label temp7
+    call temp6
+    return $SP
+Func w
+    goto temp4
+Func temp3
+    a := param 1
+    temp5 := 1 - 1
+    return temp5
+Label temp4
+    call temp3
+    return $SP
+Func q
+    goto temp1
+Func temp0
+    a := param 1
+    temp2 := 1 + 1
+    return temp2
+Label temp1
+    call temp0
+    return $SP

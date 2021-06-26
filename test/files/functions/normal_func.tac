@@ -1,1 +1,9 @@
-Right [TacFuncLabel "negate",TacGoto "temp1",TacFuncLabel "temp0",TacGetParam (RefVar "a") 1,TacUnary (RefVar "temp2") UnaryMinus (RefVar "a"),TacReturn (RefVar "temp2"),TacLabel "temp1",TacCall (RefVar "temp0"),TacReturn RefSP]
+Func negate
+    goto temp1
+Func temp0
+    a := param 1
+    temp2 := - a
+    return temp2
+Label temp1
+    call temp0
+    return $SP

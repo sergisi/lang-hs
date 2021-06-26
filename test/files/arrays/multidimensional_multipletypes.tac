@@ -1,1 +1,3 @@
-Left "Happy error on line and column (3,2): Type Error: \n\t\tExpected: [Int]\n\t\t     Got: [Bool]"
+Happy error on line and column (3,2): Type Error: 
+		Expected: [Int]
+		     Got: [Bool]

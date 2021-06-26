@@ -1,1 +1,3 @@
-Left "Happy error on line and column (4,1): Type Error: \n\t\tExpected: Int\n\t\t     Got: Real"
+Happy error on line and column (4,1): Type Error: 
+		Expected: Int
+		     Got: Real

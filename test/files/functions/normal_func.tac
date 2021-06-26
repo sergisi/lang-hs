@@ -1,0 +1,1 @@
+Right [TacFuncLabel "negate",TacGoto "temp1",TacFuncLabel "temp0",TacGetParam (RefVar "a") 1,TacUnary (RefVar "temp2") UnaryMinus (RefVar "a"),TacReturn (RefVar "temp2"),TacLabel "temp1",TacCall "temp0",TacReturn RefSP]

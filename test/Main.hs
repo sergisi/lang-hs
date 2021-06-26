@@ -63,10 +63,16 @@ tests = do
   gTestsConditional <- goldenTests "Golden Conditionals" "./test/files/conditional"
   gTestsAmbits <- goldenTests "Golden Ambits" "./test/files/ambits_programa"
   gTestsExpresions <- goldenTests "Golden Expressions" "./test/files/expresions"
+  gTestsArrays <- goldenTests "Golden Arrays" "./test/files/arrays"
+  gTestsWhile <- goldenTests "Golden While" "./test/files/while"
+  gTestsRepeatUntil <- goldenTests "Golden Repeat/Until" "./test/files/repeat_until"
   return $ testGroup "Tests" [gTestsFunctions, 
                               gTestsConditional,
                               gTestsAmbits, 
                               gTestsExpresions,
+                              gTestsArrays,
+                              gTestsWhile,
+                              gTestsRepeatUntil,
                               funcTests, 
                               dataTests]
 

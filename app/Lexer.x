@@ -75,6 +75,8 @@ $white+    { skip }
 "do"            { tk LDo }
 "for"           { tk LFor }
 "map"           { tk LMap }
+"repeat"        { tk LRepeat }
+"until"         { tk LUntil }
 \|              { tk LSumType }
 [0-9]+          { token (\(_, _, _, s) len -> LInt . read $ take len s) }
 [0-9]+\.[0-9]+  { token (\(_, _, _, s) len -> LDouble . read $ take len s) }
@@ -138,6 +140,8 @@ data LexerT = LMult
             | LUnit
             | LWhile
             | LDo
+            | LRepeat
+            | LUntil
             deriving (Show, Eq, Read, Ord)
 
 scanner str = fmap reverse . runAlex str $ loop []

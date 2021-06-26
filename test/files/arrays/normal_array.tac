@@ -1,0 +1,1 @@
+Right [TacFuncLabel "f",TacGoto "temp1",TacFuncLabel "temp0",TacGetParam (RefVar "a") 1,TacCopy (RefInf "temp2" 0) (RefConstInt 4),TacCopy (RefInf "temp2" 1) (RefConstInt 1),TacCopy (RefInf "temp2" 3) (RefConstInt 2),TacCopy (RefInf "temp2" 5) (RefConstInt 3),TacCopy (RefInf "temp2" 7) (RefConstInt 4),TacReturn (RefVar "temp2"),TacLabel "temp1",TacCall "temp0",TacReturn RefSP]

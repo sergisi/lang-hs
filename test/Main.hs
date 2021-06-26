@@ -27,7 +27,7 @@ funcTests =
     ]
   where
     constructor = runAlex "" $ generateMultDef (MultDef "name" [TypeInt, TypeChar, TypeReal, TypeFun [TypeInt, TypeBool], TypeBool]) 0
-    expected = Right [TacFuncLabel "name", TacCopy (RefInf "temp0" 0) (RefConstInt 0), TacGetParam (RefInf "temp0" 1) 0, TacGetParam (RefInf "temp0" 3) 1, TacGetParam (RefInf "temp0" 4) 2, TacGetParam (RefInf "temp0" 7) 3, TacReturn (RefVar "temp0")]
+    expected = Right [TacFuncLabel "name", TacCopy (RefInf (RefVar "temp0") $ RefConstInt 0) (RefConstInt 0), TacGetParam (RefInf (RefVar "temp0") $ RefConstInt 1) 0, TacGetParam (RefInf (RefVar "temp0") $ RefConstInt 3) 1, TacGetParam (RefInf (RefVar "temp0") $ RefConstInt 4) 2, TacGetParam (RefInf (RefVar "temp0") $ RefConstInt 7) 3, TacReturn (RefVar "temp0")]
 
 
 dataTests =

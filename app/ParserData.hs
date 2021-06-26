@@ -137,6 +137,7 @@ instance Repr Ref where
     RefConstInt r -> show r
     RefConstReal r -> show r
     RefConstBool r -> show r
+    RefConstChar r -> show r
     RefSP -> "$SP"
     RefFunc n -> n
 

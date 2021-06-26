@@ -180,12 +180,12 @@ PrimitiveExp : Def '+'   Def   { defineExp [TypeInt, TypeReal] $1 OpSum $3 }
              | Def "mod" Def   { defineExp [TypeInt] $1 OpMod $3 }
              | Def "div" Def   { defineExp [TypeInt] $1 OpDiv $3 }
              | Def '/'   Def   { defineExp [TypeReal] $1 OpDiv $3 }
-             | Def "=="  Def   { defineExp' TypeBool [TypeInt, TypeReal, TypeBool] $1 OpEq $3}
-             | Def "!="  Def   { defineExp' TypeBool [TypeInt, TypeReal, TypeBool] $1 OpNeq $3}
-             | Def '<'   Def   { defineExp' TypeBool [TypeInt, TypeReal] $1 OpLt $3}
-             | Def "<="  Def   { defineExp' TypeBool [TypeInt, TypeReal] $1 OpLEq $3}
-             | Def '>'   Def   { defineExp' TypeBool [TypeInt, TypeReal] $1 OpGt $3}
-             | Def ">="  Def   { defineExp' TypeBool [TypeInt, TypeReal] $1 OpGEq $3}
+             | Def "=="  Def   { defineExp' TypeBool [TypeInt, TypeReal, TypeBool, TypeChar] $1 OpEq $3}
+             | Def "!="  Def   { defineExp' TypeBool [TypeInt, TypeReal, TypeBool, TypeChar] $1 OpNeq $3}
+             | Def '<'   Def   { defineExp' TypeBool [TypeInt, TypeReal, TypeChar] $1 OpLt $3}
+             | Def "<="  Def   { defineExp' TypeBool [TypeInt, TypeReal, TypeChar] $1 OpLEq $3}
+             | Def '>'   Def   { defineExp' TypeBool [TypeInt, TypeReal, TypeChar] $1 OpGt $3}
+             | Def ">="  Def   { defineExp' TypeBool [TypeInt, TypeReal, TypeChar] $1 OpGEq $3}
              | Def ">>"  Def   { defineExp [TypeInt] $1 OpRightShift $3 }
              | Def "<<"  Def   { defineExp [TypeInt] $1 OpLeftShift $3 }
              | Def '&'   Def   { defineExp [TypeInt] $1 OpBitAnd $3 }
@@ -199,6 +199,7 @@ PrimitiveExp : Def '+'   Def   { defineExp [TypeInt, TypeReal] $1 OpSum $3 }
              | int             { return $ Right (RefConstInt $1, [], TypeInt) }
              | real            { return $ Right (RefConstReal $1, [], TypeReal) }
              | bool            { return $ Right (RefConstBool $1, [], TypeBool) }
+             | char            { return $ Right (RefConstChar $1, [], TypeChar) }
 
 
 {

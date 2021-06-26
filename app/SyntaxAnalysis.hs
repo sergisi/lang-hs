@@ -78,7 +78,10 @@ newContext = do
 
 -- | Removes the last context if it does not leave [] as the actual context.
 removeContext :: Alex AlexUserState
-removeContext = alexGetUserState >>= removeContext'
+removeContext = do
+  s <- alexGetUserState >>= removeContext'
+  alexSetUserState s
+  return s
 
 removeContext' :: AlexUserState -> Alex AlexUserState
 removeContext' a@(AlexUserState vs ds _)

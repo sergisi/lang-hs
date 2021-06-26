@@ -56,7 +56,7 @@ goldenTests name folder = do
     [ goldenVsString 
         (takeBaseName codeFile)
         tacFile
-        (fromString . show . runGolden <$> readFile codeFile)
+        (fromString . runGolden <$> readFile codeFile)
     | codeFile <- codeFiles 
     , let tacFile = replaceExtension codeFile ".tac"
     ] 

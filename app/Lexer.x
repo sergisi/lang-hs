@@ -35,7 +35,7 @@ $white+    { skip }
 \)              { tk LRBrack }
 "div"           { tk LDivInt }
 "mod"           { tk LMod }
-'.'             { token $ \(_, _, _, (x:y:xs)) len -> LChar y }
+'.'             { token $ \(_, _, _, (_:y:_)) _ -> LChar y }
 "=="            { tk LEq }
 "!="            { tk LNeq }
 "<"             { tk LLess }
@@ -52,6 +52,8 @@ $white+    { skip }
 \^              { tk LXor }
 \{              { tk LOpenDef }
 \}              { tk LCloseDef }
+\[              { tk LOpenList }
+\]              { tk LCloseList }
 "true"          { tk $ LBool True }
 "false"         { tk $ LBool False }
 \;              { tk LSync }
@@ -69,8 +71,14 @@ $white+    { skip }
 "if"            { tk LConditional}
 "else"          { tk LElse }
 "while"         { tk LWhile }
-"do"            { tk LDo }
 "with"          { tk LWith }
+"do"            { tk LDo }
+<<<<<<< HEAD
+"with"          { tk LWith }
+=======
+"for"           { tk LFor }
+"map"           { tk LMap }
+>>>>>>> 873216a67ca4434eb391b41e9410e775460ab270
 \|              { tk LSumType }
 [0-9]+          { token (\(_, _, _, s) len -> LInt . read $ take len s) }
 [0-9]+\.[0-9]+  { token (\(_, _, _, s) len -> LDouble . read $ take len s) }
@@ -90,6 +98,11 @@ data LexerT = LMult
             | LRBrack
             | LConditional
             | LElse
+            | LOpenList
+            | LCloseList
+            | LWith
+            | LFor
+            | LMap
             | LInt Int
             | LVar String
             | LDouble Double

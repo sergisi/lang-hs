@@ -552,3 +552,13 @@ getStringOfRef ref = case ref of
   RefVar n -> return n
   RefFunc n -> return n
   _ -> strError "Expected: Function, Got: Constant"
+
+getArrayElemDef :: Exp -> Exp -> Exp
+getArrayElemDef pos array =  
+  posExp <- pos >>= checkType TypeInt
+  arrExp <- array
+  case arrExp of
+      Right (refArr, codeArr, typeArr) -> 
+        do
+          return 
+

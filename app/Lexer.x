@@ -73,12 +73,8 @@ $white+    { skip }
 "while"         { tk LWhile }
 "with"          { tk LWith }
 "do"            { tk LDo }
-<<<<<<< HEAD
-"with"          { tk LWith }
-=======
 "for"           { tk LFor }
 "map"           { tk LMap }
->>>>>>> 873216a67ca4434eb391b41e9410e775460ab270
 \|              { tk LSumType }
 [0-9]+          { token (\(_, _, _, s) len -> LInt . read $ take len s) }
 [0-9]+\.[0-9]+  { token (\(_, _, _, s) len -> LDouble . read $ take len s) }

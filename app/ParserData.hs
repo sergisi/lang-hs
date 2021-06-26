@@ -125,6 +125,7 @@ data Ref
   | RefConstInt Int
   | RefConstReal Double
   | RefConstBool Bool
+  | RefConstChar Char
   | RefSP
   | RefFunc Name
   deriving (Show, Eq, Read, Ord)

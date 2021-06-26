@@ -35,7 +35,7 @@ $white+    { skip }
 \)              { tk LRBrack }
 "div"           { tk LDivInt }
 "mod"           { tk LMod }
-'.'             { token $ \(_, _, _, (_:y:_)) _ -> LChar y }
+\'.\'           { token $ \(_, _, _, (_:y:_)) _ -> LChar y } 
 "=="            { tk LEq }
 "!="            { tk LNeq }
 "<"             { tk LLess }

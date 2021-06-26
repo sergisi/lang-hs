@@ -7,7 +7,7 @@ import Control.Monad
     liftM2,
     when,
   )
-import Data.Map.Strict as Map
+import Data.Map.Strict (fromList)
 import Lexer
 import Parser
 import ParserData
@@ -27,7 +27,7 @@ funcTests =
     ]
   where
     constructor = runAlex "" $ generateMultDef (MultDef "name" [TypeInt, TypeChar, TypeReal, TypeFun [TypeInt, TypeBool], TypeBool]) 0
-    expected = Right [TacFuncLabel "name", TacCopy (RefInf "temp0" 0) (RefConstInt 0), TacGetParam (RefInf "temp0" 1) 0, TacGetParam (RefInf "temp0" 3) 1, TacGetParam (RefInf "temp0" 4) 2, TacGetParam (RefInf "temp0" 7) 3, TacReturn (RefVar "temp0")]
+    expected = Right [TacFuncLabel "name", TacCopy (RefInf (RefVar "temp0") $ RefConstInt 0) (RefConstInt 0), TacGetParam (RefInf (RefVar "temp0") $ RefConstInt 1) 0, TacGetParam (RefInf (RefVar "temp0") $ RefConstInt 3) 1, TacGetParam (RefInf (RefVar "temp0") $ RefConstInt 4) 2, TacGetParam (RefInf (RefVar "temp0") $ RefConstInt 7) 3, TacReturn (RefVar "temp0")]
 
 
 dataTests =
@@ -44,6 +44,11 @@ dataTests =
     expected'' = Left "Happy error on line and column (1,13): name B is not defined at [fromList [(\"A\",DataDef \"A\" [])]]"
     alreadyDefined = Left "Happy error on line and column (1,27): Data name Ha is already defined at [fromList [(\"Ha\",DataDef \"Ha\" [MultDef {multName = \"Ha\", parameters = [TypeDef \"Ha\"]}])]]"
 
+runGolden :: String -> String
+runGolden s = case runExpression s of
+  Right x -> unlines $ map repr x
+  Left s' -> s'
+
 goldenTests :: String -> String -> IO TestTree
 goldenTests name folder = do
   codeFiles <- findByExtension [".chs"] folder
@@ -51,7 +56,7 @@ goldenTests name folder = do
     [ goldenVsString 
         (takeBaseName codeFile)
         tacFile
-        (fromString . show . runExpression <$> readFile codeFile) 
+        (fromString . runGolden <$> readFile codeFile)
     | codeFile <- codeFiles 
     , let tacFile = replaceExtension codeFile ".tac"
     ] 

@@ -4,8 +4,8 @@
 module SyntaxAnalysis where
 
 import AlexUserState
-import Control.Monad (zipWithM)
 import Control.Applicative
+import Control.Monad (zipWithM)
 import qualified Data.Map.Strict as Map
 import Lens.Micro
 import Lexer
@@ -127,13 +127,13 @@ generateMultDef ::
   Int ->
   Alex Code
 generateMultDef (MultDef name params) x = do
-  ref <- getRef
-  let f (y, ys) dt = (sizeof dt + y, TacGetParam (RefInf ref y) : ys)
+  ref <- getRef <&> RefVar
+  let f (y, ys) dt = (sizeof dt + y, TacGetParam (RefInf ref $ RefConstInt y) : ys)
   return $
     [ TacFuncLabel name,
-      TacCopy (RefInf ref 0) $ RefConstInt x
+      TacCopy (RefInf ref $ RefConstInt 0) $ RefConstInt x
     ]
-      ++ (reverse . (TacReturn (RefVar ref) :) . zipWith (flip ($)) [len -1, len -2 ..] . tail . snd $ foldl f (1, []) params)
+      ++ (reverse . (TacReturn ref :) . zipWith (flip ($)) [len -1, len -2 ..] . tail . snd $ foldl f (1, []) params)
   where
     len :: Int
     len = length params - 1 -- Minus return type
@@ -235,17 +235,17 @@ curryficateFunction name appliedParams dt = do
   -- Idea:
   --   goto later; Func funcName [Def ...] label later;
   return
-      ( RefFunc funcName,
-        TacGoto later :
-        TacFuncLabel funcName :
-        concatMap snd' appliedParams
-          ++ map (TacPushParam . fst') appliedParams
-          ++ [ TacCall name,
-               TacReturn RefSP,
-               TacLabel later
-             ],
-        dt
-      )
+    ( RefFunc funcName,
+      TacGoto later :
+      TacFuncLabel funcName :
+      concatMap snd' appliedParams
+        ++ map (TacPushParam . fst') appliedParams
+        ++ [ TacCall $ RefVar name,
+             TacReturn RefSP,
+             TacLabel later
+           ],
+      dt
+    )
 
 ifMemberError :: [Map.Map String v] -> String -> Alex ()
 ifMemberError vdicc name
@@ -256,16 +256,15 @@ returnVar :: Name -> [RefCodeDt] -> DataType -> Alex RefCodeDt
 returnVar name appliedParams dt = do
   r <- getRef <&> RefVar
   return
-      ( r,
-        reverse
-          ( TacCopy r RefSP :
-            TacCall name :
-            map (TacPushParam . fst') appliedParams
-              ++ concatMap snd' appliedParams
-          ),
-        dt
-      )
-
+    ( r,
+      reverse
+        ( TacCopy r RefSP :
+          TacCall (RefVar name) :
+          map (TacPushParam . fst') appliedParams
+            ++ concatMap snd' appliedParams
+        ),
+      dt
+    )
 
 applyFunc :: Name -> [Exp] -> Exp
 applyFunc name params = do
@@ -308,7 +307,7 @@ defineFunc name dto e = do
       return $
         TacFuncLabel name :
         code
-          ++ [ TacCall r,
+          ++ [ TacCall $ RefVar r,
                TacReturn RefSP
              ]
     _ -> return $ TacFuncLabel name : code ++ [TacReturn ref]
@@ -411,9 +410,11 @@ defCond (refBool, boolCode, _) codeThen expThen codeElse expElse dtype = do
       codeElse ++ codeElse'
         ++ [ TacCopy res refElse,
              TacLabel labelFinal
-           ]
-    , dtype
+           ],
+      dtype
     )
+
+-- * Map Def
 
 -- | map Def
 mapDef ::
@@ -423,7 +424,69 @@ mapDef ::
   Exp ->
   -- | [b]
   Exp
-mapDef axs ado = undefined
+mapDef axs ado =
+  do
+    axs' <- axs
+    ado' <- ado
+    mapDef' axs' ado'
+
+mapDef' ::
+  -- | [a]
+  Exp' ->
+  -- | a -> b
+  Exp' ->
+  -- | [b]
+  Exp
+mapDef' axs ado@(Right (_, _, typeDo)) =
+  case typeDo of
+    TypeFun [a, b] ->
+      Right <$> mapDef'' axs ado a (TypeArray b)
+    _ -> strError $ "Do block must be a function, but got: " ++ repr typeDo
+mapDef' axs'@(Right (_, _, typeArr)) ado' =
+  case typeArr of
+    TypeArray a -> return . Left $ mapDef'' axs' ado' a
+    x -> strError $ "Expected any kind of list, but got: " ++ repr x
+mapDef' _ _ = strError "Couldn't infer type of array nor function. Introduce a constant so it can infer the list."
+
+mapDef'' ::
+  -- | [a]
+  Exp' ->
+  -- | a -> b
+  Exp' ->
+  -- | a
+  DataType ->
+  -- | b
+  DataType ->
+  Alex RefCodeDt
+mapDef'' axs ado a (TypeArray b) = do
+  (refArr, codeArr, _) <- checkType (TypeArray a) axs
+  (refAdo, codeAdo, _) <- checkType (TypeFun [a, b]) ado
+  ref <- getRef <&> RefVar
+  refIt <- getRef <&> RefVar
+  refMaxIt <- getRef <&> RefVar
+  bucle <- getRef
+  endFor <- getRef
+  boolExp <- getRef <&> RefVar
+  return
+    ( ref,
+      codeArr ++ codeAdo
+        ++ TacCopy (RefInf ref $ RefConstInt 0) (RefInf refArr $ RefConstInt 0) :
+      TacCopy refIt (RefConstInt 1) :
+      TacOp refMaxIt (RefInf refArr (RefConstInt 0)) OpMult (RefConstInt $ sizeof a) :
+      TacOp refMaxIt refMaxIt OpSum (RefConstInt 1) :
+      TacLabel bucle :
+      TacOp boolExp refIt OpLt refMaxIt :
+      TacIfExp boolExp endFor :
+      TacPushParam (RefInf refArr refIt) :
+      TacCall refAdo :
+      TacCopy (RefInf ref refIt) RefSP :
+      TacOp refIt refIt OpSum (RefConstInt (sizeof a)) :
+      TacGoto bucle :
+      [TacLabel endFor],
+      TypeArray b
+    )
+mapDef'' _ _ _ x = strError $ "Map always return an array, but expected: " ++ repr x
+-- * Real for def
 
 -- | for Def
 forDef ::
@@ -434,7 +497,76 @@ forDef ::
   -- | acc -> a -> acc
   Exp ->
   Exp
-forDef axs ainit ado = undefined
+forDef axs ainit ado =
+  do
+    axs' <- axs
+    ainit' <- ainit
+    ado' <- ado
+    forDef' axs' ainit' ado'
+
+forDef' ::
+  -- | Array [a]
+  Exp' ->
+  -- | acc
+  Exp' ->
+  -- | acc -> a -> acc
+  Exp' ->
+  Exp
+forDef' axs ainit ado@(Right (_, _, typeDo)) =
+  case typeDo of
+    TypeFun [acc, a, acc'] ->
+      if acc == acc'
+        then Right <$> forDef'' axs ainit ado a acc
+        else
+          strError $
+            "TypeError: "
+              ++ "\n\t\tExpected: "
+              ++ repr (TypeFun [acc, a, acc])
+              ++ "\n\t\t      Or: "
+              ++ repr (TypeFun [acc', a, acc'])
+              ++ "\n\t\t     Got: "
+              ++ repr (TypeFun [acc, a, acc'])
+    _ -> strError $ "Do block must be a function, but got: " ++ repr typeDo
+forDef' axs'@(Right (_, _, typeArr)) ainit' ado' =
+  case typeArr of
+    TypeArray a ->
+      case ainit' of
+        Left _ -> return . Left $ forDef'' axs' ainit' ado' a
+        Right (_, _, acc) ->
+          Right <$> forDef'' axs' ainit' ado' a acc
+    x -> strError $ "Expected any kind of list, but got: " ++ repr x
+forDef' _ _ _ = strError "Couldn't infer type of array. Introduce a variable to change it."
+
+forDef'' :: Exp' -> Exp' -> Exp' -> DataType -> DataType -> Alex RefCodeDt
+forDef'' axs ainit ado a acc = do
+  (refArr, codeArr, _) <- checkType (TypeArray a) axs
+  (refInit, codeInit, _) <- checkType acc ainit
+  (refAdo, codeAdo, _) <- checkType (TypeFun [acc, a, acc]) ado
+  refAcc <- getRef <&> RefVar
+  refIt <- getRef <&> RefVar
+  refMaxIt <- getRef <&> RefVar
+  bucle <- getRef
+  endFor <- getRef
+  boolExp <- getRef <&> RefVar
+  return
+    ( refAcc,
+      codeArr ++ codeInit ++ codeAdo
+        ++ TacCopy refAcc refInit :
+      TacCopy refIt (RefConstInt 1) :
+      TacOp refMaxIt (RefInf refArr (RefConstInt 0)) OpMult (RefConstInt $ sizeof a) :
+      TacOp refMaxIt refMaxIt OpSum (RefConstInt 1) :
+      TacLabel bucle :
+      TacOp boolExp refIt OpLt refMaxIt :
+      TacIfExp boolExp endFor :
+      TacPushParam (RefInf refArr refIt) :
+      TacPushParam refAcc :
+      TacCall refAdo :
+      TacCopy refAcc RefSP :
+      TacOp refIt refIt OpSum (RefConstInt (sizeof a)) :
+      TacGoto bucle :
+      [TacLabel endFor],
+      acc
+    )
 
 maybeHead :: [a] -> Maybe a
 maybeHead (x : _) = Just x
@@ -453,14 +585,14 @@ getInferedType =
 defineArray' :: [Exp'] -> DataType -> Alex RefCodeDt
 defineArray' xs x = do
   xs' <- traverse (checkType x) xs
-  ref <- getRef
+  ref <- getRef <&> RefVar
   let refSup = RefInf ref
   return
-    ( RefVar ref,
+    ( ref,
       concatMap snd' xs'
-        ++ TacCopy (refSup 0) (RefConstInt (length xs)) :
+        ++ TacCopy (refSup $ RefConstInt 0) (RefConstInt (length xs)) :
       zipWith
-        (TacCopy . refSup)
+        (TacCopy . refSup . RefConstInt)
         [1, 1 + sizeof x ..]
         (reverse $ map fst' xs'),
       TypeArray x
@@ -501,16 +633,17 @@ whileDef conditionFunc iniAcc accFunc dtype =
           ++ [ TacCopy refAcc refIniAcc,
                TacLabel bucle,
                TacPushParam refAcc,
-               TacCall nameCond,
+               TacCall $ RefVar nameCond,
                TacIfExp RefSP out,
                TacPushParam refAcc,
-               TacCall nameFuncAcc,
+               TacCall $ RefVar nameFuncAcc,
                TacCopy refAcc RefSP,
                TacGoto bucle,
                TacLabel out
              ],
         dtype
       )
+
 -- | repeat/until definition
 repeatUntilDef ::
   -- | code definition (acc -> acc)
@@ -539,9 +672,9 @@ repeatUntilDef accFunc conditionFunc iniAcc dtype =
                TacLabel bucle,
                TacPushParam refAcc,
                TacPushParam refAcc,
-               TacCall nameFuncAcc,
+               TacCall $ RefVar nameFuncAcc,
                TacCopy refAcc RefSP,
-               TacCall nameCond,
+               TacCall $ RefVar nameCond,
                TacIfExp RefSP bucle
              ],
         dtype

@@ -1,1 +1,17 @@
-Right [TacFuncLabel "f",TacGoto "temp1",TacFuncLabel "temp0",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp2") (RefVar "a") OpEq (RefConstInt 3),TacIfExp (RefVar "temp2") "temp5",TacOp (RefVar "temp3") (RefVar "a") OpSum (RefConstInt 1),TacCopy (RefVar "temp6") (RefVar "temp3"),TacGoto "temp7",TacLabel "temp5",TacOp (RefVar "temp4") (RefVar "a") OpSum (RefConstInt 2),TacCopy (RefVar "temp6") (RefVar "temp4"),TacLabel "temp7",TacReturn (RefVar "temp6"),TacLabel "temp1",TacCall "temp0",TacReturn RefSP]
+Func f
+    goto temp1
+Func temp0
+    a := param 1
+    temp2 := a == 3
+    if false temp2 goto temp5
+    temp3 := a + 1
+    temp6 := temp3
+    goto temp7
+Label temp5
+    temp4 := a + 2
+    temp6 := temp4
+Label temp7
+    return temp6
+Label temp1
+    call temp0
+    return $SP

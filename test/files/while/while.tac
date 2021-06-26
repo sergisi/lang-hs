@@ -1,1 +1,30 @@
-Right [TacFuncLabel "f",TacGoto "temp1",TacFuncLabel "temp0",TacGetParam (RefVar "a") 1,TacGoto "temp3",TacFuncLabel "temp2",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp4") (RefVar "a") OpLt (RefConstInt 3),TacReturn (RefVar "temp4"),TacLabel "temp3",TacGoto "temp6",TacFuncLabel "temp5",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp7") (RefVar "a") OpSum (RefConstInt 1),TacReturn (RefVar "temp7"),TacLabel "temp6",TacCopy (RefVar "temp8") (RefConstInt 0),TacLabel "temp9",TacPushParam (RefVar "temp8"),TacCall "temp2",TacIfExp RefSP "temp10",TacPushParam (RefVar "temp8"),TacCall "temp5",TacCopy (RefVar "temp8") RefSP,TacGoto "temp9",TacLabel "temp10",TacReturn (RefVar "temp8"),TacLabel "temp1",TacCall "temp0",TacReturn RefSP]
+Func f
+    goto temp1
+Func temp0
+    a := param 1
+    goto temp3
+Func temp2
+    a := param 1
+    temp4 := a < 3
+    return temp4
+Label temp3
+    goto temp6
+Func temp5
+    a := param 1
+    temp7 := a + 1
+    return temp7
+Label temp6
+    temp8 := 0
+Label temp9
+    param temp8
+    call temp2
+    if false $SP goto temp10
+    param temp8
+    call temp5
+    temp8 := $SP
+    goto temp9
+Label temp10
+    return temp8
+Label temp1
+    call temp0
+    return $SP

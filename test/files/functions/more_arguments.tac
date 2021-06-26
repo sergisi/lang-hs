@@ -1,1 +1,3 @@
-Left "Happy error on line and column (7,2): Applied more arguments than needed:\n\t\tApplied: 3\n\t\t    Got: 3"
+Happy error on line and column (7,2): Applied more arguments than needed:
+		Applied: 3
+		    Got: 3

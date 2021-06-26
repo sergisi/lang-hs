@@ -121,7 +121,7 @@ instance Repr UnaryOp where
 
 data Ref
   = RefVar String
-  | RefInf String Int -- a @ 0
+  | RefInf Ref Ref -- a @ 0
   | RefConstInt Int
   | RefConstReal Double
   | RefConstBool Bool
@@ -133,10 +133,11 @@ data Ref
 instance Repr Ref where
   repr a = case a of
     RefVar ref -> ref
-    RefInf ref i -> ref ++ " @ " ++ show i
+    RefInf ref i -> repr ref ++ " @ " ++ repr i
     RefConstInt r -> show r
     RefConstReal r -> show r
     RefConstBool r -> show r
+    RefConstChar r -> show r
     RefSP -> "$SP"
     RefFunc n -> n
 
@@ -160,7 +161,7 @@ data ThreeAddressCode
   | TacPushParam Ref
   | TacIfExp Ref Label -- if false ref goto label
   | TacReturn Ref
-  | TacCall Name
+  | TacCall Ref
   | TacDefCode Ref ThreeAddressCode
   | TacGoto Label
   deriving (Show, Eq, Ord, Read)
@@ -180,6 +181,6 @@ instance Repr ThreeAddressCode where
     TacPushParam r -> prefix ++ "param " ++ repr r
     TacIfExp r l -> prefix ++ "if false " ++ repr r ++ " goto " ++ l
     TacReturn r -> prefix ++ "return " ++ repr r
-    TacCall s -> prefix ++ "call " ++ s
+    TacCall s -> prefix ++ "call " ++ repr s
     TacDefCode r c -> prefix ++ repr r ++ " = (" ++ repr c ++ ")"
     TacGoto l -> prefix ++ "goto " ++ l

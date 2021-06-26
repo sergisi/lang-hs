@@ -1,1 +1,114 @@
-Right [TacFuncLabel "yy",TacGoto "temp34",TacFuncLabel "temp33",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp35") (RefVar "a") OpLEq (RefVar "b"),TacReturn (RefVar "temp35"),TacLabel "temp34",TacCall "temp33",TacReturn RefSP,TacFuncLabel "tt",TacGoto "temp31",TacFuncLabel "temp30",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp32") (RefVar "a") OpGEq (RefVar "b"),TacReturn (RefVar "temp32"),TacLabel "temp31",TacCall "temp30",TacReturn RefSP,TacFuncLabel "rr",TacGoto "temp28",TacFuncLabel "temp27",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp29") (RefVar "a") OpLt (RefVar "b"),TacReturn (RefVar "temp29"),TacLabel "temp28",TacCall "temp27",TacReturn RefSP,TacFuncLabel "ee",TacGoto "temp25",TacFuncLabel "temp24",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp26") (RefVar "a") OpGt (RefVar "b"),TacReturn (RefVar "temp26"),TacLabel "temp25",TacCall "temp24",TacReturn RefSP,TacFuncLabel "ww",TacGoto "temp22",TacFuncLabel "temp21",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp23") (RefVar "a") OpNeq (RefVar "b"),TacReturn (RefVar "temp23"),TacLabel "temp22",TacCall "temp21",TacReturn RefSP,TacFuncLabel "qq",TacGoto "temp19",TacFuncLabel "temp18",TacGetParam (RefVar "b") 1,TacGetParam (RefVar "a") 2,TacOp (RefVar "temp20") (RefVar "a") OpEq (RefVar "b"),TacReturn (RefVar "temp20"),TacLabel "temp19",TacCall "temp18",TacReturn RefSP,TacFuncLabel "t",TacGoto "temp16",TacFuncLabel "temp15",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp17") (RefConstChar 'c') OpGEq (RefConstChar 'c'),TacReturn (RefVar "temp17"),TacLabel "temp16",TacCall "temp15",TacReturn RefSP,TacFuncLabel "t",TacGoto "temp13",TacFuncLabel "temp12",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp14") (RefConstChar 'c') OpLEq (RefConstChar 'c'),TacReturn (RefVar "temp14"),TacLabel "temp13",TacCall "temp12",TacReturn RefSP,TacFuncLabel "r",TacGoto "temp10",TacFuncLabel "temp9",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp11") (RefConstChar 'c') OpLt (RefConstChar 'c'),TacReturn (RefVar "temp11"),TacLabel "temp10",TacCall "temp9",TacReturn RefSP,TacFuncLabel "e",TacGoto "temp7",TacFuncLabel "temp6",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp8") (RefConstChar 'c') OpGt (RefConstChar 'c'),TacReturn (RefVar "temp8"),TacLabel "temp7",TacCall "temp6",TacReturn RefSP,TacFuncLabel "w",TacGoto "temp4",TacFuncLabel "temp3",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp5") (RefConstChar 'c') OpNeq (RefConstChar 'c'),TacReturn (RefVar "temp5"),TacLabel "temp4",TacCall "temp3",TacReturn RefSP,TacFuncLabel "q",TacGoto "temp1",TacFuncLabel "temp0",TacGetParam (RefVar "a") 1,TacOp (RefVar "temp2") (RefConstChar 'c') OpEq (RefConstChar 'c'),TacReturn (RefVar "temp2"),TacLabel "temp1",TacCall "temp0",TacReturn RefSP]
+Func yy
+    goto temp34
+Func temp33
+    b := param 1
+    a := param 2
+    temp35 := a <= b
+    return temp35
+Label temp34
+    call temp33
+    return $SP
+Func tt
+    goto temp31
+Func temp30
+    b := param 1
+    a := param 2
+    temp32 := a >= b
+    return temp32
+Label temp31
+    call temp30
+    return $SP
+Func rr
+    goto temp28
+Func temp27
+    b := param 1
+    a := param 2
+    temp29 := a < b
+    return temp29
+Label temp28
+    call temp27
+    return $SP
+Func ee
+    goto temp25
+Func temp24
+    b := param 1
+    a := param 2
+    temp26 := a > b
+    return temp26
+Label temp25
+    call temp24
+    return $SP
+Func ww
+    goto temp22
+Func temp21
+    b := param 1
+    a := param 2
+    temp23 := a != b
+    return temp23
+Label temp22
+    call temp21
+    return $SP
+Func qq
+    goto temp19
+Func temp18
+    b := param 1
+    a := param 2
+    temp20 := a == b
+    return temp20
+Label temp19
+    call temp18
+    return $SP
+Func t
+    goto temp16
+Func temp15
+    a := param 1
+    temp17 := 'c' >= 'c'
+    return temp17
+Label temp16
+    call temp15
+    return $SP
+Func t
+    goto temp13
+Func temp12
+    a := param 1
+    temp14 := 'c' <= 'c'
+    return temp14
+Label temp13
+    call temp12
+    return $SP
+Func r
+    goto temp10
+Func temp9
+    a := param 1
+    temp11 := 'c' < 'c'
+    return temp11
+Label temp10
+    call temp9
+    return $SP
+Func e
+    goto temp7
+Func temp6
+    a := param 1
+    temp8 := 'c' > 'c'
+    return temp8
+Label temp7
+    call temp6
+    return $SP
+Func w
+    goto temp4
+Func temp3
+    a := param 1
+    temp5 := 'c' != 'c'
+    return temp5
+Label temp4
+    call temp3
+    return $SP
+Func q
+    goto temp1
+Func temp0
+    a := param 1
+    temp2 := 'c' == 'c'
+    return temp2
+Label temp1
+    call temp0
+    return $SP

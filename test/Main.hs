@@ -44,9 +44,9 @@ dataTests =
     expected'' = Left "Happy error on line and column (1,13): name B is not defined at [fromList [(\"A\",DataDef \"A\" [])]]"
     alreadyDefined = Left "Happy error on line and column (1,27): Data name Ha is already defined at [fromList [(\"Ha\",DataDef \"Ha\" [MultDef {multName = \"Ha\", parameters = [TypeDef \"Ha\"]}])]]"
 
-goldenTests :: IO TestTree 
-goldenTests = do
-  codeFiles <- findByExtension [".chs"] "./test/files"
+goldenTests :: String -> IO TestTree 
+goldenTests folder = do
+  codeFiles <- findByExtension [".chs"] folder
   return $ testGroup "Language Code to Three Adress Code Tests" 
     [ goldenVsString 
         (takeBaseName codeFile)
@@ -59,7 +59,15 @@ goldenTests = do
 
 tests :: IO TestTree
 tests = do 
-  gTests <- goldenTests
-  return $ testGroup "Tests" [gTests, funcTests, dataTests]
+  gTestsFunctions <- goldenTests "./test/files/functions"
+  gTestsConditional <- goldenTests "./test/files/conditional"
+  gTestsAmbits <- goldenTests "./test/files/ambits_programa"
+  gTestsExpresions <- goldenTests "./test/files/expresions"
+  return $ testGroup "Tests" [gTestsFunctions, 
+                              gTestsConditional,
+                              gTestsAmbits, 
+                              gTestsExpresions,
+                              funcTests, 
+                              dataTests]
 
 main = defaultMain =<< tests

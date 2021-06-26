@@ -28,7 +28,7 @@ import Control.Applicative (liftA2)
    char      { LChar $$ }
    ';'       { LSync }
    '='       { LAssign }
-   '%'       { LMod }
+   "mod"       { LMod }
    "div"     { LDivInt }
    ">>"      { LRightShift }
    "<<"      { LLeftShift }
@@ -67,6 +67,8 @@ import Control.Applicative (liftA2)
    "do"      { LDo }
    ','       { LComma }
    "while"   { LWhile }
+   "do"      { LDo }
+   "with"    { LWith }
 
 
 
@@ -177,7 +179,7 @@ IntExp :: { Exp }
 IntExp : Def '+'   Def   { getExp TypeInt $1 OpSum $3 }
        | Def '-'   Def   { getExp TypeInt $1 OpMinus $3 }
        | Def '*'   Def   { getExp TypeInt $1 OpMult $3 }
-       | Def '%'   Def   { getExp TypeInt $1 OpMod $3 }
+       | Def "mod"   Def   { getExp TypeInt $1 OpMod $3 }
        | Def "div" Def   { getExp TypeInt $1 OpDiv $3 }
        | Def "=="  Def   { getExp' TypeBool TypeInt $1 OpEq $3}
        | Def "!="  Def   { getExp' TypeBool TypeInt $1 OpNeq $3}

@@ -6,6 +6,7 @@
 -- This module shouldn't have anything to execute, only define the data.
 module ParserData where
 
+import Data.List (intercalate)
 
 class Repr a where
   repr :: a -> String
@@ -37,7 +38,8 @@ instance Repr DataType where
     TypeReal -> "Real"
     TypeDef n -> n
     TypeUnit -> "()"
-    TypeFun xs -> foldl (\acc x -> acc ++ " -> " ++ repr x) "" $ map repr xs
+    TypeFun xs -> intercalate " -> " $ map repr xs
+    TypeArray x -> '[' : repr x ++ "]"
 
 -- TODO posar el nombre de bytes correctes.
 sizeof :: DataType -> Int

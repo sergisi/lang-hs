@@ -38,6 +38,8 @@ import Control.Applicative (liftA2)
    '^'       { LXor }
    '{'       { LOpenDef }
    '}'       { LCloseDef }
+   '['       { LOpenList }
+   ']'       { LCloseList }
    '!'       { LBoolNot }
    "=="      { LEq }
    "!="      { LNeq }
@@ -59,6 +61,10 @@ import Control.Applicative (liftA2)
    "fun"     { LFun }
    "if"      { LConditional }
    "else"    { LElse }
+   "for"     { LFor }
+   "map"     { LMap }
+   "with"    { LWith }
+   "do"      { LDo }
    ','       { LComma }
    "while"   { LWhile }
 
@@ -98,13 +104,14 @@ ListOfFuns : Type                { [$1] }
            | ListOfFuns Type     { $2 : $1 }
 
 Type :: { Alex DataType }
-Type : "Real"      { return TypeReal }
-     | "Int"       { return TypeInt }
-     | "Bool"      { return TypeBool }
-     | "Char"      { return TypeChar }
-     | "()"        { return TypeUnit }
-     | name        { defineTypeName $1}
-     | '(' Fun ')' { fmap (TypeFun . reverse) . sequenceA $ $2 }
+Type : "Real"        { return TypeReal }
+     | "Int"         { return TypeInt }
+     | "Bool"        { return TypeBool }
+     | "Char"        { return TypeChar }
+     | '[' Type ']'  { fmap TypeArray $2 }
+     | "()"          { return TypeUnit }
+     | name          { defineTypeName $1}
+     | '(' Fun ')'   { fmap (TypeFun . reverse) . sequenceA $ $2 }
 
 Fun :: { [Alex DataType] }
 Fun : Fun "->" Type { $3 : $1 }
@@ -116,11 +123,11 @@ Names : Names name   { $2 : $1 }
 
 Parameters :: { [Exp] }
 Parameters : Parameters '(' Def ')'        { $3 : $1 }
-           | Parameters int                { guardedExp TypeInt  (return (RefConstInt  $2, [])): $1 }
-           | Parameters bool               { guardedExp TypeBool (return (RefConstBool $2, [])): $1 }
-           | Parameters real               { guardedExp TypeReal (return (RefConstReal $2, [])): $1 }
+           | Parameters int                { return (Right (RefConstInt  $2, [], TypeInt )): $1 }
+           | Parameters bool               { return (Right (RefConstBool $2, [], TypeBool)): $1 }
+           | Parameters real               { return (Right (RefConstReal $2, [], TypeReal)): $1 }
            | Parameters name               { getNameParam $2 : $1 }
-           | Parameters "()"               { guardedExp TypeUnit (return (unit, [])) : $1}
+           | Parameters "()"               { (return (Right (unit, [], TypeUnit))) : $1}
            | {- empty -}                   { [] }
 
 Def :: { Exp }
@@ -128,16 +135,26 @@ Def : IntExp                               { $1 }
     | RealExp                              { $1 }
     | BoolExp                              { $1 }
     | name Parameters                      { applyFunc $1 $2 }
-    | "fun" Names '{' Statements Def '}'   { functionDef $2 $4 $5 }
-    | "()"                                 { const $ return (unit, []) }
+    | "fun" Names '{' Statements Def '}'   { return . Left $ functionDef $2 $4 $5 }
+    | "()"                                 { return $ Right (unit, [], TypeUnit) }
+    | '[' Defs ']'                         { defineArray $2 }
     | "if" Def '{' Statements Def '}'
       "else" '{' Statements Def '}'
       { defineConditional $2 $4 $5 $9 $10 }
     | '(' Def ')'                          { $2 }
-    | "while" Def "with" Def "do" Def      { whileDef $2 $4 $6 }
-    -- | while
+    | "while" Def "with" Def "do" Def      { return . Left $ whileDef $2 $4 $6 }
+    | "for" Def "with" Def "do" Def        { forDef $2 $4 $6 }
+    | "map" Def "do" Def                   { mapDef $2 $4 }
     -- | repeat until
     -- | for
+
+Defs :: { [Exp] }
+Defs : Defs ',' Def       { $3 :$1 }
+     | Defs ','           { $1 }
+     | Def                { [$1] }
+     | {- empty -}        { [] }
+
+
 
 {-
 
@@ -175,7 +192,7 @@ IntExp : Def '+'   Def   { getExp TypeInt $1 OpSum $3 }
        | Def '^'   Def   { getExp TypeInt $1 OpBitXOR $3 }
        | '~'  Def        { getUnaryExp TypeInt UnaryComplement $2 }
        | '-'  Def        { getUnaryExp TypeInt UnaryMinus $2 }
-       | int             { guardedExp TypeInt (return (RefConstInt $1, [])) }
+       | int             { return $ Right (RefConstInt $1, [], TypeInt) }
 
 
 RealExp :: { Exp }
@@ -190,7 +207,7 @@ RealExp : Def '+'   Def   { getExp TypeReal $1 OpSum $3 }
         | Def '>'   Def   { getExp' TypeBool TypeReal $1 OpGt $3}
         | Def ">="  Def   { getExp' TypeBool TypeReal $1 OpGEq $3}
         | '-' Def         { getUnaryExp TypeReal UnaryMinus $2 }
-        | real            { guardedExp TypeReal ( return (RefConstReal $1, [])) }
+        | real            { return $ Right (RefConstReal $1, [], TypeReal) }
 
 BoolExp :: { Exp }
 BoolExp : Def "&&"  Def   { getExp TypeBool $1 OpAnd $3 }
@@ -199,7 +216,7 @@ BoolExp : Def "&&"  Def   { getExp TypeBool $1 OpAnd $3 }
         | Def "!="  Def   { getExp TypeBool $1 OpNeq $3 }
         | Def '^'   Def   { getExp TypeBool $1 OpXOR $3}
         | '!' Def         { getUnaryExp TypeBool UnaryNot $2 }
-        | bool            { guardedExp TypeBool (return (RefConstBool $1, [])) }
+        | bool            { return $ Right (RefConstBool $1, [], TypeBool) }
 
 
 {

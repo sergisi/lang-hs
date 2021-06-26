@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 -- | Performs type analysis on the syntax tree.
 module SyntaxAnalysis where
 
@@ -8,16 +10,36 @@ import Lens.Micro
 import Lexer
 import ParserData
 
-type Exp' = Alex (Ref, [ThreeAddressCode])
+type Code = [ThreeAddressCode]
 
-type Exp = DataType -> Exp'
+type RefCodeDt = (Ref, Code, DataType)
+
+type Exp' = Either (DataType -> Alex RefCodeDt) RefCodeDt
+
+type Exp = Alex Exp'
 
 -- * Utility Functions
 
-guardedExp :: DataType -> Exp' -> Exp
-guardedExp d m d'
-  | d /= d' = strError $ "Guarded\nExpected " ++ repr d ++ " but found " ++ repr d'
-  | otherwise = m
+fst' :: (a, b, c) -> a
+fst' (a, _, _) = a
+
+snd' :: (a, b, c) -> b
+snd' (_, b, _) = b
+
+trd' :: (a, b, c) -> c
+trd' (_, _, c) = c
+
+checkType :: DataType -> Exp' -> Alex RefCodeDt
+checkType dtype (Right a@(_, _, dtype'))
+  | dtype == dtype' = return a
+  | otherwise =
+    strError $
+      "Type Error: "
+        ++ "\n\t\tExpected: "
+        ++ repr dtype
+        ++ "\n\t\t     Got: "
+        ++ repr dtype'
+checkType dtype (Left f) = f dtype >>= checkType dtype . Right
 
 happyError :: Show s => s -> Alex a
 happyError = strError . show
@@ -28,8 +50,8 @@ strError tok = do
   alexError $ "Happy error on line and column " ++ show x ++ ": " ++ tok
 
 -- | Wraps function definition
-wrapFunction :: [Name] -> Name -> Name -> [ThreeAddressCode] -> Ref -> (Ref, [ThreeAddressCode])
-wrapFunction params funcName later code ref =
+wrapFunction :: [Name] -> Name -> Name -> [ThreeAddressCode] -> Ref -> DataType -> RefCodeDt
+wrapFunction params funcName later code ref dt =
   ( RefFunc funcName,
     TacGoto later :
     TacFuncLabel funcName :
@@ -37,7 +59,8 @@ wrapFunction params funcName later code ref =
       ++ code
       ++ [ TacReturn ref,
            TacLabel later
-         ]
+         ],
+    dt
   )
 
 -- | Adds a new Context
@@ -65,25 +88,17 @@ removeContext' a@(AlexUserState vs ds _)
 
 -- * Parser.y functions
 
-getNameParam :: Name -> DataType -> Exp'
-getNameParam name dt = do
+getNameParam :: Name -> Exp
+getNameParam name = do
   s <- alexGetUserState
   let vdicc = s ^. values
   if any (Map.member name) vdicc
-    then getNameParam' name dt
-    else strError $ "Name " ++ name ++ " is not defined. Expected type: " ++ repr dt
+    then
+      let val = (Map.! name) . head $ dropWhile (not . Map.member name) vdicc
+       in return $ Right (RefVar name, [], val)
+    else strError $ "Name " ++ name ++ " is not defined."
 
-getNameParam' ::
-  -- | Name of the function
-  Name ->
-  Exp
-getNameParam' name dt = do
-  s <- alexGetUserState
-  let vdicc = s ^. values
-  let val = (Map.! name) . head $ dropWhile (not . Map.member name) vdicc
-  guardedExp val (return (RefVar name, [])) dt
-
-defineData :: Name -> [Name -> Alex MultDef] -> Alex [ThreeAddressCode]
+defineData :: Name -> [Name -> Alex MultDef] -> Alex Code
 defineData name def = do
   s' <- alexGetUserState
   if any (Map.member name) $ s' ^. definitions
@@ -100,7 +115,7 @@ generateMultDef ::
   MultDef ->
   -- | We need a number to mark the type and discern between the sums.
   Int ->
-  Alex [ThreeAddressCode]
+  Alex Code
 generateMultDef (MultDef name params) x = do
   ref <- getRef
   let f (y, ys) dt = (sizeof dt + y, TacGetParam (RefInf ref y) : ys)
@@ -139,67 +154,49 @@ nameIsDefined (TypeDef name) = do
 nameIsDefined _ = return True
 
 defineTypeName :: Name -> Alex DataType
-defineTypeName name =
+defineTypeName name = do
   let def = TypeDef name
-   in do
-        b <- nameIsDefined def
-        s <- alexGetUserState
-        if b
-          then return def
-          else strError $ "name " ++ name ++ " is not defined at " ++ show (s ^. definitions)
-
-defineValue :: Name -> Alex DataType -> Exp -> Alex Exp
-defineValue name dtype' def = do
-  dType <- dtype'
+  b <- nameIsDefined def
   s <- alexGetUserState
-  alexSetUserState $
-    over
-      values
-      -- TODO canviar el valor generat.
-      (\(x : xs) -> Map.insert name dType x : xs)
-      s
-  return def
+  if b
+    then return def
+    else strError $ "name " ++ name ++ " is not defined at " ++ show (s ^. definitions)
 
-getExp :: DataType -> Exp -> Op -> Exp -> DataType -> Exp'
-getExp dt e op e' dt'
-  | dt /= dt' = strError $ "Needed " ++ repr dt ++ " but found " ++ repr dt'
-  | otherwise = do
-    ref <- getRef <&> RefVar
-    (r, code) <- e dt
-    (r', code') <- e' dt
-    return (ref, code ++ code' ++ [TacOp ref r op r'])
+getExp :: DataType -> Exp -> Op -> Exp -> Exp
+getExp dt e op e' = do
+  ref <- getRef <&> RefVar
+  (r, code, _) <- e >>= checkType dt
+  (r', code', _) <- e' >>= checkType dt
+  return $ Right (ref, code ++ code' ++ [TacOp ref r op r'], dt)
 
-getExp' :: DataType -> DataType -> Exp -> Op -> Exp -> DataType -> Exp'
-getExp' dtRes dtDefs e op e' dt'
-  | dtRes /= dt' = strError $ "Needed " ++ repr dtRes ++ " but found " ++ repr dt'
-  | otherwise = do
-    ref <- getRef <&> RefVar
-    (r, code) <- e dtDefs
-    (r', code') <- e' dtDefs
-    return (ref, code ++ code' ++ [TacOp ref r op r'])
+-- | Gets integer / real / bool / char expression
+-- Returns another type, as in == operation between integers
+getExp' :: DataType -> DataType -> Exp -> Op -> Exp -> Exp
+getExp' dtRes dtDefs e op e' = do
+  ref <- getRef <&> RefVar
+  (r, code, _) <- e >>= checkType dtDefs
+  (r', code', _) <- e' >>= checkType dtDefs
+  return $ Right (ref, code ++ code' ++ [TacOp ref r op r'], dtRes)
 
-getUnaryExp :: DataType -> UnaryOp -> Exp -> DataType -> Exp'
-getUnaryExp dt op e' dt'
-  | dt /= dt' = strError $ "Needed " ++ repr dt ++ " but found " ++ repr dt'
-  | otherwise = do
-    ref <- getRef <&> RefVar
-    (r', code') <- e' dt
-    return (ref, code' ++ [TacUnary ref op r'])
+getUnaryExp :: DataType -> UnaryOp -> Exp -> Exp
+getUnaryExp dt op e' = do
+  ref <- getRef <&> RefVar
+  (r', code', _) <- e' >>= checkType dt
+  return $ Right (ref, code' ++ [TacUnary ref op r'], dt)
 
 moreParamsThanAppliable :: [a] -> [b] -> Alex ()
-moreParamsThanAppliable xs params =
-  if length xs <= length params
-    then
-      strError $
-        "Applied more arguments than needed:"
-          ++ "\n\t\tApplied: "
-          ++ show (length params)
-          ++ "\n\t\t    Got: "
-          ++ show (length xs)
-    else return ()
+moreParamsThanAppliable xs params
+  | length xs <= length params =
+    strError $
+      "Applied more arguments than needed:"
+        ++ "\n\t\tApplied: "
+        ++ show (length params)
+        ++ "\n\t\t    Got: "
+        ++ show (length xs)
+  | otherwise = return ()
 
-guardVariableApplication :: (Eq b, Repr b) => [a] -> b -> b -> Alex ()
-guardVariableApplication params x y
+noParameters :: (Repr b) => [a] -> b -> Alex ()
+noParameters params x
   | not (null params) =
     strError
       ( "Applied Function to value: "
@@ -208,73 +205,49 @@ guardVariableApplication params x y
           ++ "\n\t\tNumber of parameters: "
           ++ show (length params)
       )
-  | x /= y =
-    strError $
-      "ApplyFunc: Expected value and returned differ: "
-        ++ "\n\t\tExpected: "
-        ++ repr y
-        ++ "\n\t\tReturned: "
-        ++ repr x
   | otherwise = return ()
 
-curryficateFunction :: Name -> [(Ref, [ThreeAddressCode])] -> Exp'
-curryficateFunction name appliedParams = do
+curryficateFunction :: Name -> [RefCodeDt] -> DataType -> Alex RefCodeDt
+curryficateFunction name appliedParams dt = do
   funcName <- getRef
   later <- getRef
   -- Idea:
   --   goto later; Func funcName [Def ...] label later;
   return
-    ( RefFunc funcName,
-      TacGoto later :
-      TacFuncLabel funcName :
-      concatMap snd appliedParams
-        ++ map (TacPushParam . fst) appliedParams
-        ++ [ TacCall name,
-             TacReturn RefSP,
-             TacLabel later
-           ]
-    )
+      ( RefFunc funcName,
+        TacGoto later :
+        TacFuncLabel funcName :
+        concatMap snd' appliedParams
+          ++ map (TacPushParam . fst') appliedParams
+          ++ [ TacCall name,
+               TacReturn RefSP,
+               TacLabel later
+             ],
+        dt
+      )
 
 ifMemberError :: [Map.Map String v] -> String -> Alex ()
 ifMemberError vdicc name
   | any (Map.member name) vdicc = return ()
   | otherwise = strError $ "Apply Function name " ++ name ++ " is not defined"
 
-returnVar :: Name -> [(Ref, [ThreeAddressCode])] -> Exp'
-returnVar name appliedParams = do
-   r <- getRef <&> RefVar
-   return
-     ( r,
-       reverse
-         ( TacCopy r RefSP :
-           TacCall name :
-           map (TacPushParam . fst) appliedParams
-             ++ concatMap snd appliedParams
-         )
-     )
+returnVar :: Name -> [RefCodeDt] -> DataType -> Alex RefCodeDt
+returnVar name appliedParams dt = do
+  r <- getRef <&> RefVar
+  return
+      ( r,
+        reverse
+          ( TacCopy r RefSP :
+            TacCall name :
+            map (TacPushParam . fst') appliedParams
+              ++ concatMap snd' appliedParams
+          ),
+        dt
+      )
 
-returnTypeIsOk :: [DataType] -> DataType -> Alex ()
-returnTypeIsOk [x] y
-  | x /= y =
-    strError $
-      "ApplyFunc: Expected value and returned differ: "
-        ++ "\n\t\tExpected: "
-        ++ repr y
-        ++ "\n\t\tReturned: "
-        ++ repr x
-  | otherwise = return ()
-returnTypeIsOk xs y
-  | TypeFun xs /= y =
-     strError $
-      "ApplyFunc: Expected value and returned differ: "
-        ++ "\n\t\tExpected: "
-        ++ repr y
-        ++ "\n\t\tReturned: "
-        ++ repr (TypeFun xs)
-  | otherwise = return ()
 
-applyFunc :: Name -> [DataType -> Alex (Ref, [ThreeAddressCode])] -> DataType -> Alex (Ref, [ThreeAddressCode])
-applyFunc name params dtype = do
+applyFunc :: Name -> [Exp] -> Exp
+applyFunc name params = do
   s <- alexGetUserState
   let vdicc = s ^. values
   ifMemberError vdicc name
@@ -283,15 +256,13 @@ applyFunc name params dtype = do
     TypeFun xs ->
       do
         moreParamsThanAppliable xs params
-        appliedParams <- zipWithM ($) params xs
-        returnTypeIsOk (drop (length params) xs) dtype
+        appliedParams <- zipWithM (\x y -> y >>= checkType x) xs params
         if length xs - 1 == length params
-          then returnVar name appliedParams
-          else curryficateFunction name appliedParams
-
+          then Right <$> returnVar name appliedParams (last xs)
+          else Right <$> curryficateFunction name appliedParams (TypeFun $ drop (length params) xs)
     x -> do
-      guardVariableApplication params x dtype
-      return (RefVar name, [])
+      noParameters params x
+      return $ Right (RefVar name, [], x)
 
 -- | Define Func only for Outer Assigns
 defineFunc ::
@@ -300,17 +271,17 @@ defineFunc ::
   -- |  Types of fun
   [Alex DataType] ->
   -- |  Def
-  (DataType -> Alex (Ref, [ThreeAddressCode])) ->
+  Exp ->
   Alex [ThreeAddressCode]
 defineFunc name [x'] _ = do
   x <- x'
   strError $ "Can not have global constants, please declare using unit: " ++ name ++ ":: () -> " ++ repr x ++ " = definition"
-defineFunc name dto f = do
+defineFunc name dto exp = do
   x' <- sequenceA dto
   let x'' = TypeFun $ reverse x'
   s <- alexGetUserState
   alexSetUserState $ over values (\(y : ys) -> Map.insert name x'' y : ys) s
-  (ref, code) <- f x''
+  (ref, code, _) <- exp >>= checkType x''
   case ref of
     RefFunc r ->
       return $
@@ -328,18 +299,29 @@ defineFunc' ::
   -- | Types of fun
   [Alex DataType] ->
   -- | Def
-  (DataType -> Alex (Ref, [ThreeAddressCode])) ->
+  Exp ->
   Alex [ThreeAddressCode]
-defineFunc' name [x] f = do
+defineFunc' name [x] exp = do
   x' <- x
   s <- alexGetUserState
   alexSetUserState $ over values (\(y : ys) -> Map.insert name x' y : ys) s
-  (ref, code) <- f x'
+  (ref, code, _) <- exp >>= checkType x'
   return $ code ++ [TacCopy (RefVar name) ref]
 defineFunc' a b c = defineFunc a b c
 
-functionDef :: [Name] -> Alex [ThreeAddressCode] -> (DataType -> Alex (Ref, [ThreeAddressCode])) -> DataType -> Alex (Ref, [ThreeAddressCode])
-functionDef names mcode def (TypeFun xs)
+-- TODO how do I change this?
+
+functionDef ::
+  -- | Names
+  [Name] ->
+  -- | Statements
+  Alex Code ->
+  -- | Def
+  Exp ->
+  -- | Non inferable type.
+  DataType ->
+  Alex (Ref, Code, DataType)
+functionDef names mcode def dt@(TypeFun xs)
   | length xs <= length names =
     strError $ "Defined more parameters than the function has: " ++ repr (TypeFun xs) ++ "; with parameters: " ++ unwords names
   | otherwise =
@@ -351,18 +333,18 @@ functionDef names mcode def (TypeFun xs)
       alexSetUserState s''
       code <- mcode
       let xs' = drop (length names) xs
-      (ref, code') <- def (if length xs' == 1 then head xs' else TypeFun xs')
+      (ref, code', dtype) <- def >>= checkType (if length xs' == 1 then head xs' else TypeFun xs')
       _ <- removeContext
-      return $ wrapFunction names funcName later (code ++ code') ref
+      return $ wrapFunction names funcName later (code ++ code') ref dt
 functionDef [] mcode def x =
   do
     _ <- newContext
     funcName <- getRef
     later <- getRef
     code <- mcode
-    (ref, code') <- def x
+    (ref, code', _) <- def >>= checkType x
     _ <- removeContext
-    return $ wrapFunction [] funcName later (code ++ code') ref
+    return $ wrapFunction [] funcName later (code ++ code') ref x
 functionDef _ _ _ _ = strError "Invalid definition of a function."
 
 -- while :: (acc -> Bool) -> (acc -> acc) -> acc -> acc
@@ -371,66 +353,146 @@ functionDef _ _ _ _ = strError "Invalid definition of a function."
 type Statements = Alex [ThreeAddressCode]
 
 defineConditional :: Exp -> Statements -> Exp -> Statements -> Exp -> Exp
-defineConditional boolExp stsThen expThen stsElse expElse dtype =
-  do
-    (refBool, boolCode) <- boolExp TypeBool
-    _ <- newContext
-    codeThen <- stsThen
-    (refThen, codeThen') <- expThen dtype
-    _ <- removeContext
-    _ <- newContext
-    codeElse <- stsElse
-    (refElse, codeElse') <- expElse dtype
-    _ <- removeContext
-    labelElse <- getRef
-    res <- getRef <&> RefVar
-    labelFinal <- getRef
-    return
-      ( res,
-        boolCode
-          ++ TacIfExp refBool labelElse :
-        codeThen ++ codeThen'
-          ++ TacCopy res refThen :
-        TacGoto labelFinal :
-        TacLabel labelElse :
-        codeElse ++ codeElse'
-          ++ [ TacCopy res refElse,
-               TacLabel labelFinal
-             ]
+defineConditional boolExp stsThen expThen stsElse expElse = do
+  boolExp' <- boolExp >>= checkType TypeBool
+  _ <- newContext
+  codeThen <- stsThen
+  expThen' <- expThen
+  _ <- removeContext
+  _ <- newContext
+  codeElse <- stsElse
+  expElse' <- expElse
+  _ <- removeContext
+  case canInferCond expThen' expElse' of
+    Just x -> Right <$> defCond boolExp' codeThen expThen' codeElse expElse' x
+    Nothing -> return . Left $ defCond boolExp' codeThen expThen' codeElse expElse'
+
+canInferCond :: Exp' -> Exp' -> Maybe DataType
+canInferCond (Right (_, _, x)) _ = Just x
+canInferCond _ (Right (_, _, x)) = Just x
+canInferCond _ _ = Nothing
+
+defCond :: RefCodeDt -> Code -> Exp' -> Code -> Exp' -> DataType -> Alex RefCodeDt
+defCond (refBool, boolCode, _) codeThen expThen codeElse expElse dtype = do
+  (refThen, codeThen', _) <- checkType dtype expThen
+  (refElse, codeElse', _) <- checkType dtype expElse
+  labelElse <- getRef
+  res <- getRef <&> RefVar
+  labelFinal <- getRef
+  return
+    ( res,
+      boolCode
+        ++ TacIfExp refBool labelElse :
+      codeThen ++ codeThen'
+        ++ TacCopy res refThen :
+      TacGoto labelFinal :
+      TacLabel labelElse :
+      codeElse ++ codeElse'
+        ++ [ TacCopy res refElse,
+             TacLabel labelFinal
+           ]
+    , dtype
+    )
+
+-- | map Def
+mapDef ::
+  -- | Array [a]
+  Exp ->
+  -- | a -> b
+  Exp ->
+  -- | [b]
+  Exp
+mapDef axs ado = undefined
+
+-- | for Def
+forDef ::
+  -- | Array [a]
+  Exp ->
+  -- | acc
+  Exp ->
+  -- | acc -> a -> acc
+  Exp ->
+  Exp
+forDef axs ainit ado = undefined
+
+maybeHead :: [a] -> Maybe a
+maybeHead (x : xs) = Just x
+maybeHead [] = Nothing
+
+getInferedType :: [Exp'] -> Maybe DataType
+getInferedType =
+  fmap (\(Right (_, _, x)) -> x)
+    . maybeHead
+    . dropWhile
+      ( \case
+          Left _ -> True
+          Right _ -> False
       )
 
-whileDef :: Exp -> Exp -> Exp -> Exp
-whileDef conditionFunc iniAcc accFunc dtype = 
+defineArray' :: [Exp'] -> DataType -> Alex RefCodeDt
+defineArray' xs x = do
+  xs' <- traverse (checkType x) xs
+  ref <- getRef
+  let refSup = RefInf ref
+  return
+    ( RefVar ref,
+      concatMap snd' xs'
+        ++ TacCopy (refSup 0) (RefConstInt (length xs)) :
+      zipWith
+        (TacCopy . refSup)
+        [1, 1 + sizeof x ..]
+        (reverse $ map fst' xs'),
+      TypeArray x
+    )
+
+defineArray :: [Exp] -> Exp
+defineArray xs = do
+  xs' <- sequenceA xs
+  case getInferedType xs' of
+    Just x -> Right <$> defineArray' xs' x
+    Nothing -> return . Left $ defineArray' xs'
+
+-- | While definition
+whileDef ::
+  -- | Bool definition (acc -> Bool)
+  Exp ->
+  -- | with definition aka initialization bloc (acc)
+  Exp ->
+  -- | code definition (acc -> acc)
+  Exp ->
+  DataType ->
+  Alex (Ref, Code, DataType)
+whileDef conditionFunc iniAcc accFunc dtype =
   do
-    (refCond, codeCond) <- conditionFunc (TypeFun [dtype, TypeBool])
+    (refCond, codeCond, _) <- conditionFunc >>= checkType (TypeFun [dtype, TypeBool])
     nameCond <- getStringOfRef refCond
-    (refIniAcc, codeIniAcc) <- iniAcc dtype
-    (refFuncAcc, codeAcc) <- accFunc (TypeFun [dtype, dtype])
+    (refIniAcc, codeIniAcc, _) <- iniAcc >>= checkType dtype
+    (refFuncAcc, codeAcc, _) <- accFunc >>= checkType (TypeFun [dtype, dtype])
     nameFuncAcc <- getStringOfRef refFuncAcc
     refAcc <- getRef <&> RefVar
     bucle <- getRef
     out <- getRef
-    return (refAcc,   codeIniAcc 
-                      ++ codeCond 
-                      ++ codeAcc
-                      ++ [ TacCopy refAcc refIniAcc,
-                      TacLabel bucle,
-                      TacPushParam refAcc, 
-                      TacCall nameCond,
-                      TacIfExp RefSP out,
-                      TacPushParam refAcc,
-                      TacCall nameFuncAcc,
-                      TacCopy refAcc RefSP,
-                      TacGoto bucle,
-                      TacLabel  out
-                      ]
-              )
-              
-getStringOfRef :: Ref -> Alex String 
+    return
+      ( refAcc,
+        codeIniAcc
+          ++ codeCond
+          ++ codeAcc
+          ++ [ TacCopy refAcc refIniAcc,
+               TacLabel bucle,
+               TacPushParam refAcc,
+               TacCall nameCond,
+               TacIfExp RefSP out,
+               TacPushParam refAcc,
+               TacCall nameFuncAcc,
+               TacCopy refAcc RefSP,
+               TacGoto bucle,
+               TacLabel out
+             ],
+        dtype
+      )
+
+getStringOfRef :: Ref -> Alex String
 getStringOfRef ref = case ref of
   RefVar n -> return n
   RefFunc n -> return n
   _ -> strError "Expected: Function, Got: Constant"
-
-  
-

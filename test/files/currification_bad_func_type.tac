@@ -1,1 +1,1 @@
-Left "Happy error on line and column (7,2): ApplyFunc: Expected value and returned differ: \n\t\tExpected:  -> Int -> Int\n\t\tReturned: Real"
+Left "Happy error on line and column (7,2): Type Error: \n\t\tExpected: Int -> Int\n\t\t     Got: Real"

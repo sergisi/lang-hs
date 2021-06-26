@@ -14,10 +14,6 @@ r :: Bool -> Bool = fun a {
     true != true
 };
 
-t :: Bool -> Bool = fun a {
-    true ^ true
-};
-
 y :: Bool -> Bool = fun a {
     !true
 };
@@ -36,10 +32,6 @@ ee :: Bool -> Bool -> Bool = fun a b {
 
 rr :: Bool -> Bool -> Bool = fun a b {
     a != b
-};
-
-tt :: Bool -> Bool -> Bool = fun a b {
-    a ^ b
 };
 
 yy :: Bool -> Bool -> Bool = fun a b {

@@ -5,6 +5,7 @@ module SyntaxAnalysis where
 
 import AlexUserState
 import Control.Monad (zipWithM)
+import Control.Applicative
 import qualified Data.Map.Strict as Map
 import Lens.Micro
 import Lexer
@@ -28,6 +29,12 @@ snd' (_, b, _) = b
 
 trd' :: (a, b, c) -> c
 trd' (_, _, c) = c
+
+checkType' :: DataType -> Exp' -> Alex (Maybe RefCodeDt)
+checkType' dtype (Right a@(_, _, dtype'))
+  | dtype == dtype' = return $ Just a
+  | otherwise = return Nothing
+checkType' dtype (Left f) = f dtype >>= checkType' dtype . Right
 
 checkType :: DataType -> Exp' -> Alex RefCodeDt
 checkType dtype (Right a@(_, _, dtype'))
@@ -165,27 +172,38 @@ defineTypeName name = do
     then return def
     else strError $ "name " ++ name ++ " is not defined at " ++ show (s ^. definitions)
 
-getExp :: DataType -> Exp -> Op -> Exp -> Exp
-getExp dt e op e' = do
+defineExp :: [DataType] -> Exp -> Op -> Exp -> Exp
+defineExp dts e op e' = do
   ref <- getRef <&> RefVar
-  (r, code, _) <- e >>= checkType dt
-  (r', code', _) <- e' >>= checkType dt
-  return $ Right (ref, code ++ code' ++ [TacOp ref r op r'], dt)
+  mayDef <- traverse (getExp e e') dts <&> foldl (<|>) Nothing
+  case mayDef of
+    Just ((r, code, dt), (r', code', _)) -> return $ Right (ref, code ++ code' ++ [TacOp ref r op r'], dt)
+    Nothing -> strError $ "None of the types: " ++ show (map repr dts) ++ " are apliable"
 
--- | Gets integer / real / bool / char expression
--- Returns another type, as in == operation between integers
-getExp' :: DataType -> DataType -> Exp -> Op -> Exp -> Exp
-getExp' dtRes dtDefs e op e' = do
-  ref <- getRef <&> RefVar
-  (r, code, _) <- e >>= checkType dtDefs
-  (r', code', _) <- e' >>= checkType dtDefs
-  return $ Right (ref, code ++ code' ++ [TacOp ref r op r'], dtRes)
+getExp :: Exp -> Exp -> DataType -> Alex (Maybe (RefCodeDt, RefCodeDt))
+getExp e e' dt = do
+  mayExp <- e >>= checkType' dt
+  mayExp' <- e' >>= checkType' dt
+  return $ (,) <$> mayExp <*> mayExp'
 
-getUnaryExp :: DataType -> UnaryOp -> Exp -> Exp
-getUnaryExp dt op e' = do
+defineExp' :: DataType -> [DataType] -> Exp -> Op -> Exp -> Exp
+defineExp' dtRes dts e op e' = do
   ref <- getRef <&> RefVar
-  (r', code', _) <- e' >>= checkType dt
-  return $ Right (ref, code' ++ [TacUnary ref op r'], dt)
+  mayDef <- traverse (getExp e e') dts <&> foldl (<|>) Nothing
+  case mayDef of
+    Just ((r, code, _), (r', code', _)) -> return $ Right (ref, code ++ code' ++ [TacOp ref r op r'], dtRes)
+    Nothing -> strError $ "None of the types: " ++ show (map repr dts) ++ " are apliable"
+
+defineUnaryExp :: [DataType] -> UnaryOp -> Exp -> Exp
+defineUnaryExp dts op e' = do
+  ref <- getRef <&> RefVar
+  mayDef <- traverse (getUnaryExp e') dts <&> foldl (<|>) Nothing
+  case mayDef of
+    Just (r', code', dt) -> return $ Right (ref, code' ++ [TacUnary ref op r'], dt)
+    Nothing -> strError $ "None of the types: " ++ show (map repr dts) ++ " are apliable"
+
+getUnaryExp :: Exp -> DataType -> Alex (Maybe RefCodeDt)
+getUnaryExp e dt = e >>= checkType' dt
 
 moreParamsThanAppliable :: [a] -> [b] -> Alex ()
 moreParamsThanAppliable xs params
@@ -279,12 +297,12 @@ defineFunc ::
 defineFunc name [x'] _ = do
   x <- x'
   strError $ "Can not have global constants, please declare using unit: " ++ name ++ ":: () -> " ++ repr x ++ " = definition"
-defineFunc name dto exp = do
+defineFunc name dto e = do
   x' <- sequenceA dto
   let x'' = TypeFun $ reverse x'
   s <- alexGetUserState
   alexSetUserState $ over values (\(y : ys) -> Map.insert name x'' y : ys) s
-  (ref, code, _) <- exp >>= checkType x''
+  (ref, code, _) <- e >>= checkType x''
   case ref of
     RefFunc r ->
       return $
@@ -304,11 +322,11 @@ defineFunc' ::
   -- | Def
   Exp ->
   Alex [ThreeAddressCode]
-defineFunc' name [x] exp = do
+defineFunc' name [x] e = do
   x' <- x
   s <- alexGetUserState
   alexSetUserState $ over values (\(y : ys) -> Map.insert name x' y : ys) s
-  (ref, code, _) <- exp >>= checkType x'
+  (ref, code, _) <- e >>= checkType x'
   return $ code ++ [TacCopy (RefVar name) ref]
 defineFunc' a b c = defineFunc a b c
 
@@ -336,7 +354,7 @@ functionDef names mcode def dt@(TypeFun xs)
       alexSetUserState s''
       code <- mcode
       let xs' = drop (length names) xs
-      (ref, code', dtype) <- def >>= checkType (if length xs' == 1 then head xs' else TypeFun xs')
+      (ref, code', _) <- def >>= checkType (if length xs' == 1 then head xs' else TypeFun xs')
       _ <- removeContext
       return $ wrapFunction names funcName later (code ++ code') ref dt
 functionDef [] mcode def x =
@@ -444,7 +462,7 @@ forDef' (Right (refArr, codeArr, typeArr)) ainit' ado' =
 forDef'' :: DataType -> DataType -> Exp' -> Exp' -> Exp'
 
 maybeHead :: [a] -> Maybe a
-maybeHead (x : xs) = Just x
+maybeHead (x : _) = Just x
 maybeHead [] = Nothing
 
 getInferedType :: [Exp'] -> Maybe DataType

@@ -10,35 +10,31 @@ e :: Real -> Real = fun a {
     1.1 * 1.1
 };
 
-r :: Real -> Real = fun a {
-    1.1 mod 1.1
-};
-
 t :: Real -> Real = fun a {
-    1.1 div 1.1
+    1.1 / 1.1
 };
 
-y :: Real -> Real = fun a {
+y :: Real -> Bool = fun a {
     1.1 == 1.1
 };
 
-u :: Real -> Real = fun a {
+u :: Real -> Bool = fun a {
     1.1 != 1.1
 };
 
-i :: Real -> Real = fun a {
+i :: Real -> Bool = fun a {
     1.1 < 1.1
 };
 
-o :: Real -> Real = fun a {
+o :: Real -> Bool = fun a {
     1.1 > 1.1
 };
 
-p :: Real -> Real = fun a {
+p :: Real -> Bool = fun a {
     1.1 <= 1.1
 };
 
-a :: Real -> Real = fun a {
+a :: Real -> Bool = fun a {
     1.1 >= 1.1
 };
  
@@ -58,12 +54,8 @@ ee :: Real -> Real -> Real = fun a b {
     a * b
 };
 
-rr :: Real -> Real -> Real = fun a b {
-    a mod b
-};
-
 tt :: Real -> Real -> Real = fun a b {
-    a div b
+    a / b
 };
 
 yy :: Real -> Real -> Bool = fun a b {
@@ -93,4 +85,3 @@ aa :: Real -> Real -> Bool = fun a b {
 ss :: Real -> Real = fun a {
     -a
 };
-    

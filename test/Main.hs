@@ -71,6 +71,9 @@ tests = do
   gTestsArrays <- goldenTests "Golden Arrays" "./test/files/arrays"
   gTestsWhile <- goldenTests "Golden While" "./test/files/while"
   gTestsRepeatUntil <- goldenTests "Golden Repeat/Until" "./test/files/repeat_until"
+  gTestsMap <- goldenTests "Golden Map" "./test/files/map"
+  gTestsFor <- goldenTests "Golden For" "./test/files/for"
+  gTestsGetFrom <- goldenTests "Golden Get/From" "./test/files/get_from"
   return $ testGroup "Tests" [gTestsFunctions, 
                               gTestsConditional,
                               gTestsAmbits, 
@@ -78,6 +81,9 @@ tests = do
                               gTestsArrays,
                               gTestsWhile,
                               gTestsRepeatUntil,
+                              gTestsMap,
+                              gTestsFor,
+                              gTestsGetFrom,
                               funcTests, 
                               dataTests]
 

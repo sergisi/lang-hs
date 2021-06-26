@@ -1,1 +1,1 @@
-Left "Happy error on line and column (11,3): Guarded\nExpected Bool but found Int"
+Left "Happy error on line and column (11,3): Type Error: \n\t\tExpected: Int\n\t\t     Got: Bool"

@@ -1,1 +1,1 @@
-Left "Happy error on line and column (3,3): Needed Int but found Real"
+Left "Happy error on line and column (3,3): Type Error: \n\t\tExpected: Int\n\t\t     Got: Real"

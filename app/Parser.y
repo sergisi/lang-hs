@@ -67,8 +67,6 @@ import Control.Applicative (liftA2)
    "do"      { LDo }
    ','       { LComma }
    "while"   { LWhile }
-   "do"      { LDo }
-   "with"    { LWith }
 
 
 

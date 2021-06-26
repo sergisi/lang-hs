@@ -138,7 +138,6 @@ data LexerT = LMult
             | LUnit
             | LWhile
             | LDo
-            | LWith
             deriving (Show, Eq, Read, Ord)
 
 scanner str = fmap reverse . runAlex str $ loop []

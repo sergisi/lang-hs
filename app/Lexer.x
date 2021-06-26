@@ -31,7 +31,6 @@ $white+    { skip }
 \/              { tk LDiv }
 \+              { tk LSum }
 \-              { tk LMinus }
-
 \(              { tk LLBrack }
 \)              { tk LRBrack }
 "div"           { tk LDivInt }
@@ -71,6 +70,7 @@ $white+    { skip }
 "else"          { tk LElse }
 "while"         { tk LWhile }
 "do"            { tk LDo }
+"with"          { tk LWith }
 \|              { tk LSumType }
 [0-9]+          { token (\(_, _, _, s) len -> LInt . read $ take len s) }
 [0-9]+\.[0-9]+  { token (\(_, _, _, s) len -> LDouble . read $ take len s) }
@@ -129,6 +129,7 @@ data LexerT = LMult
             | LUnit
             | LWhile
             | LDo
+            | LWith
             deriving (Show, Eq, Read, Ord)
 
 scanner str = fmap reverse . runAlex str $ loop []

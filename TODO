@@ -3,3 +3,7 @@
 * for
 * main
 * arrays
+
+BUGS
+- Ambits de programa fitxer local_variables
+- Definició de funcions que no reben parametre

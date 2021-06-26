@@ -63,6 +63,8 @@ import Control.Applicative (liftA2)
    "else"    { LElse }
    "for"     { LFor }
    "map"     { LMap }
+   "repeat"  { LRepeat }
+   "until"   { LUntil }
    "with"    { LWith }
    "do"      { LDo }
    ','       { LComma }
@@ -143,8 +145,8 @@ Def : PrimitiveExp                         { $1 }
     | "while" Def "with" Def "do" Def      { return . Left $ whileDef $2 $4 $6 }
     | "for" Def "with" Def "do" Def        { forDef $2 $4 $6 }
     | "map" Def "do" Def                   { mapDef $2 $4 }
+    | "repeat" Def "until" Def "with" Def  { return . Left $ repeatUntilDef $2 $4 $6 } 
     -- | repeat until
-    -- | for
 
 Defs :: { [Exp] }
 Defs : Defs ',' Def       { $3 :$1 }

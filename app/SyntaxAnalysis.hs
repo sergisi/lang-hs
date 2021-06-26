@@ -511,6 +511,41 @@ whileDef conditionFunc iniAcc accFunc dtype =
              ],
         dtype
       )
+-- | repeat/until definition
+repeatUntilDef ::
+  -- | code definition (acc -> acc)
+  Exp ->
+  -- | Bool definition (acc -> Bool)
+  Exp ->
+  -- | with definition aka initialization bloc (acc)
+  Exp ->
+  DataType ->
+  Alex (Ref, Code, DataType)
+repeatUntilDef accFunc conditionFunc iniAcc dtype =
+  do
+    (refCond, codeCond, _) <- conditionFunc >>= checkType (TypeFun [dtype, TypeBool])
+    nameCond <- getStringOfRef refCond
+    (refIniAcc, codeIniAcc, _) <- iniAcc >>= checkType dtype
+    (refFuncAcc, codeAcc, _) <- accFunc >>= checkType (TypeFun [dtype, dtype])
+    nameFuncAcc <- getStringOfRef refFuncAcc
+    refAcc <- getRef <&> RefVar
+    bucle <- getRef
+    return
+      ( refAcc,
+        codeIniAcc
+          ++ codeCond
+          ++ codeAcc
+          ++ [ TacCopy refAcc refIniAcc,
+               TacLabel bucle,
+               TacPushParam refAcc,
+               TacPushParam refAcc,
+               TacCall nameFuncAcc,
+               TacCopy refAcc RefSP,
+               TacCall nameCond,
+               TacIfExp RefSP bucle
+             ],
+        dtype
+      )
 
 getStringOfRef :: Ref -> Alex String
 getStringOfRef ref = case ref of

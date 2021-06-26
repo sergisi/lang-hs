@@ -416,7 +416,32 @@ forDef ::
   -- | acc -> a -> acc
   Exp ->
   Exp
-forDef axs ainit ado = undefined
+forDef axs ainit ado = 
+  do
+    axs' <- axs
+    ainit' <- ainit
+    ado' <- ado
+    forDef' axs' ainit' ado'
+
+
+forDef' :: 
+-- | Array [a]
+  Exp' ->
+  -- | acc
+  Exp' ->
+  -- | acc -> a -> acc
+  Exp' ->
+  Exp
+forDef' (Right (refArr, codeArr, typeArr)) ainit' ado' = 
+  case typeArr of
+    TypeArray a -> 
+      case ainit' of
+        Left f -> _ 
+        Right (refAinit, codeAinit, ainitType) ->
+          do
+          (refAdo, codeAdo, _) <- checkType (TypeFun [ainitType ,typeArr, ainitType])
+    
+forDef'' :: DataType -> DataType -> Exp' -> Exp' -> Exp'
 
 maybeHead :: [a] -> Maybe a
 maybeHead (x : xs) = Just x

@@ -486,6 +486,7 @@ mapDef'' axs ado a (TypeArray b) = do
       TypeArray b
     )
 mapDef'' _ _ _ x = strError $ "Map always return an array, but expected: " ++ repr x
+
 -- * Real for def
 
 -- | for Def
@@ -687,11 +688,23 @@ getStringOfRef ref = case ref of
   _ -> strError "Expected: Function, Got: Constant"
 
 getArrayElemDef :: Exp -> Exp -> Exp
-getArrayElemDef pos array =  
+getArrayElemDef pos array = do
   posExp <- pos >>= checkType TypeInt
   arrExp <- array
   case arrExp of
-      Right (refArr, codeArr, typeArr) -> 
-        getArrayElemDef' posExp arrExp typeArr
-        
+    Right (_, _, TypeArray dt) ->
+      Right <$> getArrayElemDef' posExp arrExp dt
+    Right (_, _, dt) -> strError $ "Expected array, but got: " ++ repr dt
+    Left _ -> return . Left $ getArrayElemDef' posExp arrExp
 
+getArrayElemDef' :: RefCodeDt -> Exp' -> DataType -> Alex RefCodeDt
+getArrayElemDef' (refPos, codePos, _) arrExp dt = do
+  (refArr, codeArr, _) <- checkType (TypeArray dt) arrExp
+  pos <- getRef <&> RefVar
+  return
+    ( RefInf refArr pos,
+      codePos ++ codeArr
+        ++ TacOp pos refPos OpMult (RefConstInt $ sizeof dt) :
+      [TacOp pos pos OpSum (RefConstInt 1)],
+      dt
+    )

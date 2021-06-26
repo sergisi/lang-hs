@@ -692,6 +692,6 @@ getArrayElemDef pos array =
   arrExp <- array
   case arrExp of
       Right (refArr, codeArr, typeArr) -> 
-        do
-          return 
+        getArrayElemDef' posExp arrExp typeArr
+        
 

@@ -5,6 +5,7 @@ module SyntaxAnalysis where
 
 import AlexUserState
 import Control.Monad (zipWithM)
+import Control.Applicative
 import qualified Data.Map.Strict as Map
 import Lens.Micro
 import Lexer
@@ -28,6 +29,12 @@ snd' (_, b, _) = b
 
 trd' :: (a, b, c) -> c
 trd' (_, _, c) = c
+
+checkType' :: DataType -> Exp' -> Alex (Maybe RefCodeDt)
+checkType' dtype (Right a@(_, _, dtype'))
+  | dtype == dtype' = return $ Just a
+  | otherwise = return Nothing
+checkType' dtype (Left f) = f dtype >>= checkType' dtype . Right
 
 checkType :: DataType -> Exp' -> Alex RefCodeDt
 checkType dtype (Right a@(_, _, dtype'))
@@ -165,27 +172,38 @@ defineTypeName name = do
     then return def
     else strError $ "name " ++ name ++ " is not defined at " ++ show (s ^. definitions)
 
-getExp :: DataType -> Exp -> Op -> Exp -> Exp
-getExp dt e op e' = do
+defineExp :: [DataType] -> Exp -> Op -> Exp -> Exp
+defineExp dts e op e' = do
   ref <- getRef <&> RefVar
-  (r, code, _) <- e >>= checkType dt
-  (r', code', _) <- e' >>= checkType dt
-  return $ Right (ref, code ++ code' ++ [TacOp ref r op r'], dt)
+  mayDef <- traverse (getExp e op e') dts <&> foldl (<|>) Nothing
+  case mayDef of
+    Just ((r, code, dt), (r', code', _)) -> return $ Right (ref, code ++ code' ++ [TacOp ref r op r'], dt)
+    Nothing -> strError $ "None of the types: " ++ show (map repr dts) ++ " are apliable"
 
--- | Gets integer / real / bool / char expression
--- Returns another type, as in == operation between integers
-getExp' :: DataType -> DataType -> Exp -> Op -> Exp -> Exp
-getExp' dtRes dtDefs e op e' = do
-  ref <- getRef <&> RefVar
-  (r, code, _) <- e >>= checkType dtDefs
-  (r', code', _) <- e' >>= checkType dtDefs
-  return $ Right (ref, code ++ code' ++ [TacOp ref r op r'], dtRes)
+getExp :: Exp -> Op -> Exp -> DataType -> Alex (Maybe (RefCodeDt, RefCodeDt))
+getExp e op e' dt = do
+  mayExp <- e >>= checkType' dt
+  mayExp' <- e' >>= checkType' dt
+  return $ (,) <$> mayExp <*> mayExp'
 
-getUnaryExp :: DataType -> UnaryOp -> Exp -> Exp
-getUnaryExp dt op e' = do
+defineExp' :: DataType -> [DataType] -> Exp -> Op -> Exp -> Exp
+defineExp' dtRes dts e op e' = do
   ref <- getRef <&> RefVar
-  (r', code', _) <- e' >>= checkType dt
-  return $ Right (ref, code' ++ [TacUnary ref op r'], dt)
+  mayDef <- traverse (getExp e op e') dts <&> foldl (<|>) Nothing
+  case mayDef of
+    Just ((r, code, _), (r', code', _)) -> return $ Right (ref, code ++ code' ++ [TacOp ref r op r'], dtRes)
+    Nothing -> strError $ "None of the types: " ++ show (map repr dts) ++ " are apliable"
+
+defineUnaryExp :: [DataType] -> UnaryOp -> Exp -> Exp
+defineUnaryExp dts op e' = do
+  ref <- getRef <&> RefVar
+  mayDef <- traverse (getUnaryExp e') dts <&> foldl (<|>) Nothing
+  case mayDef of
+    Just (r', code', dt) -> return $ Right (ref, code' ++ [TacUnary ref op r'], dt)
+    Nothing -> strError $ "None of the types: " ++ show (map repr dts) ++ " are apliable"
+
+getUnaryExp :: Exp -> DataType -> Alex (Maybe RefCodeDt)
+getUnaryExp e dt = e >>= checkType' dt
 
 moreParamsThanAppliable :: [a] -> [b] -> Alex ()
 moreParamsThanAppliable xs params

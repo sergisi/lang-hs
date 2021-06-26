@@ -131,9 +131,7 @@ Parameters : Parameters '(' Def ')'        { $3 : $1 }
            | {- empty -}                   { [] }
 
 Def :: { Exp }
-Def : IntExp                               { $1 }
-    | RealExp                              { $1 }
-    | BoolExp                              { $1 }
+Def : PrimitiveExp                         { $1 }
     | name Parameters                      { applyFunc $1 $2 }
     | "fun" Names '{' Statements Def '}'   { return . Left $ functionDef $2 $4 $5 }
     | "()"                                 { return $ Right (unit, [], TypeUnit) }
@@ -173,50 +171,32 @@ Statements :: { Alex [ThreeAddressCode] }
 Statements : Statements Statement ';' { liftA2 (++) $1 $2 }
            | {- empty -}              { return [] }
 
-IntExp :: { Exp }
-IntExp : Def '+'   Def   { getExp TypeInt $1 OpSum $3 }
-       | Def '-'   Def   { getExp TypeInt $1 OpMinus $3 }
-       | Def '*'   Def   { getExp TypeInt $1 OpMult $3 }
-       | Def "mod"   Def   { getExp TypeInt $1 OpMod $3 }
-       | Def "div" Def   { getExp TypeInt $1 OpDiv $3 }
-       | Def "=="  Def   { getExp' TypeBool TypeInt $1 OpEq $3}
-       | Def "!="  Def   { getExp' TypeBool TypeInt $1 OpNeq $3}
-       | Def '<'   Def   { getExp' TypeBool TypeInt $1 OpLt $3}
-       | Def "<="  Def   { getExp' TypeBool TypeInt $1 OpLEq $3}
-       | Def '>'   Def   { getExp' TypeBool TypeInt $1 OpGt $3}
-       | Def ">="  Def   { getExp' TypeBool TypeInt $1 OpGEq $3}
-       | Def ">>"  Def   { getExp TypeInt $1 OpRightShift $3 }
-       | Def "<<"  Def   { getExp TypeInt $1 OpLeftShift $3 }
-       | Def '&'   Def   { getExp TypeInt $1 OpBitAnd $3 }
-       | Def '|'   Def   { getExp TypeInt $1 OpBitOr $3 }
-       | Def '^'   Def   { getExp TypeInt $1 OpBitXOR $3 }
-       | '~'  Def        { getUnaryExp TypeInt UnaryComplement $2 }
-       | '-'  Def        { getUnaryExp TypeInt UnaryMinus $2 }
-       | int             { return $ Right (RefConstInt $1, [], TypeInt) }
-
-
-RealExp :: { Exp }
-RealExp : Def '+'   Def   { getExp TypeReal $1 OpSum $3 }
-        | Def '-'   Def   { getExp TypeReal $1 OpMinus $3 }
-        | Def '*'   Def   { getExp TypeReal $1 OpMult $3 }
-        | Def '/'   Def   { getExp TypeReal $1 OpDiv $3 }
-        | Def "=="  Def   { getExp' TypeBool TypeReal $1 OpEq $3}
-        | Def "!="  Def   { getExp' TypeBool TypeReal $1 OpNeq $3}
-        | Def '<'   Def   { getExp' TypeBool TypeReal $1 OpLt $3}
-        | Def "<="  Def   { getExp' TypeBool TypeReal $1 OpLEq $3}
-        | Def '>'   Def   { getExp' TypeBool TypeReal $1 OpGt $3}
-        | Def ">="  Def   { getExp' TypeBool TypeReal $1 OpGEq $3}
-        | '-' Def         { getUnaryExp TypeReal UnaryMinus $2 }
-        | real            { return $ Right (RefConstReal $1, [], TypeReal) }
-
-BoolExp :: { Exp }
-BoolExp : Def "&&"  Def   { getExp TypeBool $1 OpAnd $3 }
-        | Def "||"  Def   { getExp TypeBool $1 OpOr $3 }
-        | Def "=="  Def   { getExp TypeBool $1 OpEq $3 }
-        | Def "!="  Def   { getExp TypeBool $1 OpNeq $3 }
-        | Def '^'   Def   { getExp TypeBool $1 OpXOR $3}
-        | '!' Def         { getUnaryExp TypeBool UnaryNot $2 }
-        | bool            { return $ Right (RefConstBool $1, [], TypeBool) }
+PrimitiveExp :: { Exp }
+PrimitiveExp : Def '+'   Def   { defineExp [TypeInt, TypeReal] $1 OpSum $3 }
+             | Def '-'   Def   { defineExp [TypeInt, TypeReal] $1 OpMinus $3 }
+             | Def '*'   Def   { defineExp [TypeInt, TypeReal] $1 OpMult $3 }
+             | Def "mod" Def   { defineExp [TypeInt] $1 OpMod $3 }
+             | Def "div" Def   { defineExp [TypeInt] $1 OpDiv $3 }
+             | Def '/'   Def   { defineExp [TypeReal] $1 OpDiv $3 }
+             | Def "=="  Def   { defineExp' TypeBool [TypeInt, TypeReal, TypeBool] $1 OpEq $3}
+             | Def "!="  Def   { defineExp' TypeBool [TypeInt, TypeReal, TypeBool] $1 OpNeq $3}
+             | Def '<'   Def   { defineExp' TypeBool [TypeInt, TypeReal] $1 OpLt $3}
+             | Def "<="  Def   { defineExp' TypeBool [TypeInt, TypeReal] $1 OpLEq $3}
+             | Def '>'   Def   { defineExp' TypeBool [TypeInt, TypeReal] $1 OpGt $3}
+             | Def ">="  Def   { defineExp' TypeBool [TypeInt, TypeReal] $1 OpGEq $3}
+             | Def ">>"  Def   { defineExp [TypeInt] $1 OpRightShift $3 }
+             | Def "<<"  Def   { defineExp [TypeInt] $1 OpLeftShift $3 }
+             | Def '&'   Def   { defineExp [TypeInt] $1 OpBitAnd $3 }
+             | Def '|'   Def   { defineExp [TypeInt] $1 OpBitOr $3 }
+             | Def '^'   Def   { defineExp [TypeInt] $1 OpBitXOR $3 }
+             | Def "&&"  Def   { defineExp [TypeBool] $1 OpAnd $3 }
+             | Def "||"  Def   { defineExp [TypeBool] $1 OpOr $3 }
+             | '~'  Def        { defineUnaryExp [TypeInt] UnaryComplement $2 }
+             | '-'  Def        { defineUnaryExp [TypeInt, TypeReal] UnaryMinus $2 }
+             | '!' Def         { defineUnaryExp [TypeBool] UnaryNot $2 }
+             | int             { return $ Right (RefConstInt $1, [], TypeInt) }
+             | real            { return $ Right (RefConstReal $1, [], TypeReal) }
+             | bool            { return $ Right (RefConstBool $1, [], TypeBool) }
 
 
 {

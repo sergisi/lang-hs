@@ -1,4 +1,13 @@
 \documentclass{article}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Overleaf Example},
+    pdfpagemode=FullScreen,
+    }
 \begin{document}
 \section{Pràctica III: Anàlisi semàntica i generació de codi intermedi}
 Alumnes: Joaquim Picó Mora, Sergi Simón Balcells\\
@@ -29,6 +38,8 @@ que s'han implementat en aquest llenguatge:
 \subsection{Three Address Code}
 Es pot veure la sintàxis del còdi generat en els fitxers amb extensió
 .tac de la carpeta test/files. En algun dels testos es proven casos d'error, i per tant en aquells no hi ha codi de tres adreces generat. S'ha de veure d'aquells en que no es prova un cas d'error.
+\subsubsection{Tests}
+Els tests s'han realitzat mitjançant una tècnica anomenada \href{https://hackage.haskell.org/package/tasty-golden}{Golden Testing}. Aquesta tècnica consisteix en facilitar els testos de programes que escriuen el seu resultat en fitxers. Aquest tecnica de testing bolca els resultats dels programes en fitxers, per passar el test aquest resultat ha de ser identic que els resultats dels anomenats "Golden files", els quals contenen el resultat correcte del test. 
 \subsection{Taula de simbols}
 En la mònada d'estat que ens dona Àlex i emmagatzemem dos Maps. El map
 de definicions on s'hi guardaran les definicions de tipus que realitzem

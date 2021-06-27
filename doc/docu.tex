@@ -1,49 +1,52 @@
 \documentclass{article}
 \usepackage{hyperref}
 \hypersetup{
-    colorlinks=true,
-    linkcolor=blue,
-    filecolor=magenta,      
-    urlcolor=cyan,
-    pdftitle={Overleaf Example},
-    pdfpagemode=FullScreen,
-    }
+colorlinks=true,
+linkcolor=blue,
+filecolor=magenta,
+urlcolor=cyan,
+pdftitle={Overleaf Example},
+pdfpagemode=FullScreen,
+}
 \begin{document}
 \section{Pràctica III: Anàlisi semàntica i generació de codi intermedi}
 Alumnes: Joaquim Picó Mora, Sergi Simón Balcells\\
 Professora: Maria Teresa Alsinet Bernadó\\
-Curs: 2020-2021
-\subsection{Caràcteristiques bàsiques}
-A continuació és mostra un llistat de les caràcteristiques principals
-que s'han implementat en aquest llenguatge: 
+Curs: 2020-2021\\
+\href{https://github.com/sergisi/lang-hs}{GitHub}
+\subsection{Característiques bàsiques}
+A continuació és mostra un llistat de les característiques principals
+que s'han implementat en aquest llenguatge:
 \begin{itemize}
-\item Tots els valors són constants 
-\item S'ha implementat la definició de funcions (Veure a test/files/functions/normal\_function.chs) 
-\item S'ha implementat la crida de funcions (Veure a test/files/functions/call\_func.chs) 
-\item Adicionalment, s'ha implementat la currificació dels paràmetres de les funcions . (Veure a test/files/functions/currification.chs)
-\item No hi ha constants globals, només funcions globals. Tot s'ha de definir dins alguna fuinció. 
-\item Àmbits de programa: S'ha pensat com una llista(pila) que resideix en la mònada AlexState en la qual es van afegint Maps a mesura que es creen contextos diferents. 
-\item Soporta els tipus bolea, enter, caràcter i real. 
-\item Es poden crear arrays i arrays ndimensionals (Veure a test/files/arrays) 
-\item S'han creat totes les expressions d'enters, dels reals, dels boleans i algunes per el tipus caràcter. (Veure a test/files/expresions) 
-\item S'ha creat l'estructura d'assignació per a les funcions i per a data. 
-\item S'ha creat l'estructura if/else (Veure a test/files/conditional/conditional.chs) 
-\item S'ha creat l'estructura while (Veure a test/files/while/while.chs) 
-\item S'ha creat l'estructura for (veure a test/files/for/for.chs)
-\item S'ha creat l'estructura repeat/until (veure a test/files/repeat\_until/repeat\_until.chs)
-\item Adicionalment s'ha creat l'estructura map (veure a test/files/map/map.chs)
-\item Adicionalment s'ha implementat la definició de tipus mitjançant data. (Veure a test/files/data/data.chs) 
-\item Juntament amb data s'ha implementat l'estructura case of. (Veure a test/files/case\_of/case\_of.chs)
+\item Tots els valors són constants
+\item S'ha implementat la definició de funcions (Vegeu a test/files/functions/normal\_function.chs)
+\item S'ha implementat la crida de funcions (Vegeu a test/files/functions/call\_func.chs)
+\item Addicionalment, s'ha implementat la currificació dels paràmetres de les funcions. (Vegeu a test/files/functions/currification.chs)
+\item No hi ha constants globals, només funcions globals. Tot s'ha de definir dins alguna funció.
+\item Àmbits de programa: S'ha pensat com una llista(pila) que resideix en la mònada AlexState en la qual es van afegint Maps a mesura que es creen contextos diferents.
+\item Suporta els tipus boleà, enter, caràcter i real.
+\item Es poden crear arrays i arrays n dimensionals (Vegeu a test/files/arrays)
+\item S'han creat totes les expressions d'enters, dels reals, dels boleans i algunes pel tipus caràcter. (Vegeu a test/files/expresions)
+\item S'ha creat l'estructura d'assignació per a les funcions i per a data.
+\item S'ha creat l'estructura if/else (Vegeu a test/files/conditional/conditional.chs)
+\item S'ha creat l'estructura while (Vegeu a test/files/while/while.chs)
+\item S'ha creat l'estructura for (Vegeu a test/files/for/for.chs)
+\item S'ha creat l'estructura repeat/until (Vegeu a test/files/repeat\_until/repeat\_until.chs)
+\item Addicionalment s'ha creat l'estructura map (Vegeu a test/files/map/map.chs)
+\item Addicionalment s'ha implementat la definició de tipus mitjançant data. (Vegeu a test/files/data/data.chs)
+\item Juntament amb data s'ha implementat l'estructura case of. (Vegeu a test/files/case\_of/case\_of.chs)
 \end{itemize}
 \subsection{Three Address Code}
-Es pot veure la sintàxis del còdi generat en els fitxers amb extensió
-.tac de la carpeta test/files. En algun dels testos es proven casos d'error, i per tant en aquells no hi ha codi de tres adreces generat. S'ha de veure d'aquells en que no es prova un cas d'error.
+Per tal de realitzar la generació de codi es crea un tipus ThreeAdressCode en el qual definim el llenguatge al qual traduïm. Tot el codi del nostre llenguatge es tradueix a aquest codi de tres adreces i posteriorment implementarem una instància de la Typclass Repr d'aquest tipus per tal de fer-ne la traducció a String senzilla. Aquesta instància de la Typeclass Repr farà la visualització d'aquest codi generat una tasca més còmode.
+Es pot veure la sintaxi del codi generat en els fitxers amb extensió\\
+.tac de la carpeta test/files. En algun dels testos es proven casos d'error, i per tant en aquells no hi ha codi de tres adreces generat. S'ha de veure d'aquells en què no es prova un cas d'error.
 \subsubsection{Tests}
-Els tests s'han realitzat mitjançant una tècnica anomenada \href{https://hackage.haskell.org/package/tasty-golden}{Golden Testing}. Aquesta tècnica consisteix en facilitar els testos de programes que escriuen el seu resultat en fitxers. Aquest tecnica de testing bolca els resultats dels programes en fitxers, per passar el test aquest resultat ha de ser identic que els resultats dels anomenats "Golden files", els quals contenen el resultat correcte del test. 
-\subsection{Taula de simbols}
-En la mònada d'estat que ens dona Àlex i emmagatzemem dos Maps. El map
+Els tests s'han realitzat mitjançant una tècnica anomenada \href{https://hackage.haskell.org/package/tasty-golden}{Golden Testing}. Aquesta tècnica consisteix a facilitar els testos de programes que escriuen el seu resultat en fitxers. Aquesta tècnica de testing bolca els resultats dels programes en fitxers, per passar el test aquest resultat ha de ser idèntic que els resultats dels anomenats "Golden files", els quals contenen el resultat correcte del test.
+\subsection{Taula de símbols}
+En la mònada d'estat que ens dóna Àlex i emmagatzemem dos Maps. El map
 de definicions on s'hi guardaran les definicions de tipus que realitzem
-mitjançant data. I el Map de valors, on s'hi guardara tota la resta de
+mitjançant data. I el Map de valors, on s'hi guardarà tota la resta de
 definicions.
 \end{document}
+
 

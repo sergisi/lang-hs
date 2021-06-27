@@ -1,0 +1,40 @@
+\documentclass{article}
+\begin{document}
+\section{Pràctica III: Anàlisi semàntica i generació de codi intermedi}
+Alumnes: Joaquim Picó Mora, Sergi Simón Balcells\\
+Professora: Maria Teresa Alsinet Bernadó\\
+Curs: 2020-2021
+\subsection{Caràcteristiques bàsiques}
+A continuació és mostra un llistat de les caràcteristiques principals
+que s'han implementat en aquest llenguatge: 
+\begin{itemize}
+\item Tots els valors són constants 
+\item S'ha implementat la definició de funcions (Veure atest/files/functions) 
+\item S'ha implementat la crida de funcions 
+\item Adicionalment, s'ha implementat la currificació dels paràmetres de les funcions 
+\item No hi ha constants globals, només funcions globals. Tot és defineix dins una fuinció. 
+\item Àmbits de programa: S'ha pensat com unallista(pila) que resideix en la mònada AlexState en la qual es vanafegint Maps a mesura que es creen contextos diferents. 
+\item Soporta els tipus bolea, enter, caràcter i real. 
+\item Es poden crear arrays i arrays ndimensionals (Veure a test/files/arrays) * S'han creat totes les expressions d'enters, dels reals, dels boleans i algunes per el tipus caràcter. (Veure a test/files/expresions) 
+\item S'ha creat l'estructura d'assignació per a les funcions i per a data. 
+\item S'ha creat l'estructura if/else (veure a test/files/conditional) 
+\item S'ha creat l'estructura while (veure a test/files/while) 
+\item S'ha creat l'estructura for (veure a test/files/for)
+\item S'ha creat l'estructura repeat/until (veure a test/files/repeat\_until)
+\item Adicionalment s'ha creat l'estructura map (veure a test/files/map)
+\item Adicionalment s'ha implementat la definició de tipus mitjançant data. (Veure a test/files/data) 
+\item Juntament amb data s'ha implementat l'estructura case of. (Veure a test/files/case\_of)
+\end{itemize}
+\subsection{Three Address Code}
+Es pot veure la sintàxis del còdi generat en els fitxers amb extensió
+.tac de la carpeta test/files. És la carpeta on hi ha tots els testos,
+en els casos en que testejem errors no es jenera el codi de tres adreces
+si no que es printa l'error. La sintàxi es pot observar en els fitxers
+.tac que es generen a partir dels testos amb el còdi correcte.
+\subsection{Taula de simbols}
+En la mònada d'estat que ens dona Àlex i emmagatzemem dos Maps. El map
+de definicions on s'hi guardaran les definicions de tipus que realitzem
+mitjançant data. I el Map de valors, on s'hi guardara tota la resta de
+definicions.
+\end{document}
+

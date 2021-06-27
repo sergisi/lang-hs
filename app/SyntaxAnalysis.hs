@@ -70,6 +70,7 @@ wrapFunction params funcName later code ref dt =
       ++ [ TacReturn ref,
            TacLabel later
          ],
+
     dt
   )
 
@@ -100,16 +101,21 @@ removeContext' a@(AlexUserState vs ds _)
   | otherwise = return . over values tail $ over definitions tail a
 
 -- * Parser.y functions
+ifNotDefinedError :: Name -> [Map.Map Name v] -> Alex v
+ifNotDefinedError name vdicc
+  | not (any (Map.member name) vdicc) = strError $ "Name " ++ name ++ " is not defined."
+  | otherwise = return . (Map.! name) . head $ dropWhile (not . Map.member name) vdicc
 
 getNameParam :: Name -> Exp
 getNameParam name = do
   s <- alexGetUserState
   let vdicc = s ^. values
-  if any (Map.member name) vdicc
-    then
-      let val = (Map.! name) . head $ dropWhile (not . Map.member name) vdicc
-       in return $ Right (RefVar name, [], val)
-    else strError $ "Name " ++ name ++ " is not defined."
+  val <- ifNotDefinedError name vdicc
+  case val of
+    TypeFun [x] -> do
+      ref <- getRef <&> RefVar
+      return $ Right (ref, [TacCall $ RefVar name, TacCopy ref RefSP], x)
+    _ -> return $ Right (RefVar name, [], val)
 
 defineData :: Name -> [Name -> Alex MultDef] -> Alex Code
 defineData name def = do
@@ -367,7 +373,9 @@ functionDef [] mcode def x =
     code <- mcode
     (ref, code', _) <- def >>= checkType x
     _ <- removeContext
-    return $ wrapFunction [] funcName later (code ++ code') ref x
+    resRef <- getRef <&> RefVar
+    let (refFunc, code'', dt') = wrapFunction [] funcName later (code ++ code') ref x
+    return (resRef, code'' ++ [TacCall refFunc, TacCopy resRef RefSP], dt')
 functionDef _ _ _ _ = strError "Invalid definition of a function."
 
 -- while :: (acc -> Bool) -> (acc -> acc) -> acc -> acc
@@ -783,7 +791,7 @@ defCase name fun dt (defs, alreadyDef, res)
     let (def, i) = defs Map.! name
     let defs' = Map.delete name defs
     let alreadyDef' = Set.insert name alreadyDef
-    let dt' = TypeFun $ init def ++ [dt]
+    let dt' = if length def == 1 then dt else TypeFun $ init def ++ [dt]
     (ref, code, _) <- checkType dt' fun
     refLabel <- getRef
     otherRef <- getRef <&> RefVar

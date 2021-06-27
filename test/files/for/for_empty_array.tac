@@ -1,0 +1,1 @@
+Happy error on line and column (3,3): Couldn't infer type of array. Introduce a variable to change it.

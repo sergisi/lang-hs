@@ -5,7 +5,7 @@ Func temp0
     goto temp3
 Func temp2
     a := param 1
-    temp4 := a < 3
+    temp4 := a > 3
     return temp4
 Label temp3
     goto temp6
@@ -17,9 +17,9 @@ Label temp6
     temp8 := 0
 Label temp9
     param temp8
-    param temp8
     call temp5
     temp8 := $SP
+    param temp8
     call temp2
     if false $SP goto temp9
     return temp8

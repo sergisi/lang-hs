@@ -675,9 +675,9 @@ repeatUntilDef accFunc conditionFunc iniAcc dtype =
           ++ [ TacCopy refAcc refIniAcc,
                TacLabel bucle,
                TacPushParam refAcc,
-               TacPushParam refAcc,
                TacCall $ RefVar nameFuncAcc,
                TacCopy refAcc RefSP,
+               TacPushParam refAcc,
                TacCall $ RefVar nameCond,
                TacIfExp RefSP bucle
              ],

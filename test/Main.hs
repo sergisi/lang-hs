@@ -74,6 +74,7 @@ tests = do
   gTestsMap <- goldenTests "Golden Map" "./test/files/map"
   gTestsFor <- goldenTests "Golden For" "./test/files/for"
   gTestsGetFrom <- goldenTests "Golden Get/From" "./test/files/get_from"
+  gTestsData <- goldenTests "Golden data" "./test/files/data"  
   return $ testGroup "Tests" [gTestsFunctions, 
                               gTestsConditional,
                               gTestsAmbits, 
@@ -84,6 +85,7 @@ tests = do
                               gTestsMap,
                               gTestsFor,
                               gTestsGetFrom,
+                              gTestsData,
                               funcTests, 
                               dataTests]
 

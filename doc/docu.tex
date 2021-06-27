@@ -9,28 +9,26 @@ A continuació és mostra un llistat de les caràcteristiques principals
 que s'han implementat en aquest llenguatge: 
 \begin{itemize}
 \item Tots els valors són constants 
-\item S'ha implementat la definició de funcions (Veure atest/files/functions) 
-\item S'ha implementat la crida de funcions 
-\item Adicionalment, s'ha implementat la currificació dels paràmetres de les funcions 
-\item No hi ha constants globals, només funcions globals. Tot és defineix dins una fuinció. 
-\item Àmbits de programa: S'ha pensat com unallista(pila) que resideix en la mònada AlexState en la qual es vanafegint Maps a mesura que es creen contextos diferents. 
+\item S'ha implementat la definició de funcions (Veure a test/files/functions/normal\_function.chs) 
+\item S'ha implementat la crida de funcions (Veure a test/files/functions/call\_func.chs) 
+\item Adicionalment, s'ha implementat la currificació dels paràmetres de les funcions . (Veure a test/files/functions/currification.chs)
+\item No hi ha constants globals, només funcions globals. Tot s'ha de definir dins alguna fuinció. 
+\item Àmbits de programa: S'ha pensat com una llista(pila) que resideix en la mònada AlexState en la qual es van afegint Maps a mesura que es creen contextos diferents. 
 \item Soporta els tipus bolea, enter, caràcter i real. 
-\item Es poden crear arrays i arrays ndimensionals (Veure a test/files/arrays) * S'han creat totes les expressions d'enters, dels reals, dels boleans i algunes per el tipus caràcter. (Veure a test/files/expresions) 
+\item Es poden crear arrays i arrays ndimensionals (Veure a test/files/arrays) 
+\item S'han creat totes les expressions d'enters, dels reals, dels boleans i algunes per el tipus caràcter. (Veure a test/files/expresions) 
 \item S'ha creat l'estructura d'assignació per a les funcions i per a data. 
-\item S'ha creat l'estructura if/else (veure a test/files/conditional) 
-\item S'ha creat l'estructura while (veure a test/files/while) 
-\item S'ha creat l'estructura for (veure a test/files/for)
-\item S'ha creat l'estructura repeat/until (veure a test/files/repeat\_until)
-\item Adicionalment s'ha creat l'estructura map (veure a test/files/map)
-\item Adicionalment s'ha implementat la definició de tipus mitjançant data. (Veure a test/files/data) 
-\item Juntament amb data s'ha implementat l'estructura case of. (Veure a test/files/case\_of)
+\item S'ha creat l'estructura if/else (Veure a test/files/conditional/conditional.chs) 
+\item S'ha creat l'estructura while (Veure a test/files/while/while.chs) 
+\item S'ha creat l'estructura for (veure a test/files/for/for.chs)
+\item S'ha creat l'estructura repeat/until (veure a test/files/repeat\_until/repeat\_until.chs)
+\item Adicionalment s'ha creat l'estructura map (veure a test/files/map/map.chs)
+\item Adicionalment s'ha implementat la definició de tipus mitjançant data. (Veure a test/files/data/data.chs) 
+\item Juntament amb data s'ha implementat l'estructura case of. (Veure a test/files/case\_of/case\_of.chs)
 \end{itemize}
 \subsection{Three Address Code}
 Es pot veure la sintàxis del còdi generat en els fitxers amb extensió
-.tac de la carpeta test/files. És la carpeta on hi ha tots els testos,
-en els casos en que testejem errors no es jenera el codi de tres adreces
-si no que es printa l'error. La sintàxi es pot observar en els fitxers
-.tac que es generen a partir dels testos amb el còdi correcte.
+.tac de la carpeta test/files. En algun dels testos es proven casos d'error, i per tant en aquells no hi ha codi de tres adreces generat. S'ha de veure d'aquells en que no es prova un cas d'error.
 \subsection{Taula de simbols}
 En la mònada d'estat que ens dona Àlex i emmagatzemem dos Maps. El map
 de definicions on s'hi guardaran les definicions de tipus que realitzem

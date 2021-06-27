@@ -64,6 +64,7 @@ $white+    { skip }
 "->"            { tk LDefFunc }
 "::"            { tk LTypeDef }
 "case"          { tk LCase }
+"of"            { tk LOf   }
 "data"          { tk LData }
 "fun"           { tk LFun }
 ","             { tk LComma }
@@ -123,6 +124,7 @@ data LexerT = LMult
             | LDefFunc
             | LDefChar
             | LCase
+            | LOf
             | LOpenDef
             | LCloseDef
             | LTypeDef

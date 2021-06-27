@@ -50,6 +50,7 @@ import Control.Applicative (liftA2)
    '<'       { LLess }
    '>'       { LGreater }
    "case"    { LCase }
+   "of"      { LOf   }
    "()"      { LUnit }
    "::"      { LTypeDef }
    "Real"    { LDefReal }
@@ -135,7 +136,7 @@ Parameters : Parameters '(' Def ')'        { $3 : $1 }
 Def :: { Exp }
 Def : PrimitiveExp                         { $1 }
     | name Parameters                      { applyFunc $1 $2 }
-    | "fun" Names '{' Statements Def '}'   { return . Left $ functionDef $2 $4 $5 }
+    | "fun" Names '{' Statements Def '}'   { return . Left $ functionDef (reverse $2) $4 $5 }
     | "()"                                 { return $ Right (unit, [], TypeUnit) }
     | '[' Defs ']'                         { defineArray $2 }
     | "if" Def '{' Statements Def '}'
@@ -147,6 +148,15 @@ Def : PrimitiveExp                         { $1 }
     | "map" Def "do" Def                   { mapDef $2 $4 }
     | "repeat" Def "until" Def "with" Def  { return . Left $ repeatUntilDef $2 $4 $6 } 
     | "get" Def "from" Def                 { getArrayElemDef $2 $4 }
+    | "case" Def "of"  Cases               { return . Left $ defCaseOf $2 $4 }
+
+Cases :: { [DataType -> CaseAcc -> Alex CaseAcc] }
+Cases : Cases ',' Case                     { $3 : $1 }
+      | Cases ','                          { $1 }
+      | Case                               { [$1] }
+
+Case :: { DataType -> CaseAcc -> Alex CaseAcc }
+Case : name Names '{' Statements Def '}' { defCase $1 (Left $ functionDef (reverse $2) $4 $5)}
 
 Defs :: { [Exp] }
 Defs : Defs ',' Def       { $3 :$1 }

@@ -7,6 +7,7 @@ import AlexUserState
 import Control.Applicative
 import Control.Monad (zipWithM)
 import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import Lens.Micro
 import Lexer
 import ParserData
@@ -18,6 +19,8 @@ type RefCodeDt = (Ref, Code, DataType)
 type Exp' = Either (DataType -> Alex RefCodeDt) RefCodeDt
 
 type Exp = Alex Exp'
+
+type CaseAcc = (Map.Map Name ([DataType], Int), Set.Set Name, Map.Map Int (Label, Code))
 
 -- * Utility Functions
 
@@ -708,3 +711,95 @@ getArrayElemDef' (refPos, codePos, _) arrExp dt = do
       [TacOp pos pos OpSum (RefConstInt 1)],
       dt
     )
+
+hasDefinition :: Name -> [Map.Map String DataDef] -> Alex DataDef
+hasDefinition name maps
+  | null xs = strError $ "Name " ++ repr name ++ " is not defined. This shoudln't be possible."
+  | otherwise = return . (Map.! name) $ head xs
+  where
+    xs = dropWhile (not . Map.member name) maps
+
+isEmpty :: (Show k, Show v) => Map.Map k v -> Alex ()
+isEmpty m
+  | Map.null m = return ()
+  | otherwise = strError $ "Case of doesn't have all the definitions: " ++ show m
+
+defCaseOf :: Exp -> [DataType -> CaseAcc -> Alex CaseAcc] -> DataType -> Alex RefCodeDt
+defCaseOf e c d = do
+  e' <- e
+  defCaseOf' e' c d
+
+defCaseOf' :: Exp' -> [DataType -> CaseAcc -> Alex CaseAcc] -> DataType -> Alex RefCodeDt
+defCaseOf' (Right (refCase, codeCase, TypeDef name)) cases expected = do
+  s <- alexGetUserState
+  DataDef _ multDefs <- hasDefinition name (s ^. definitions)
+  let f (MultDef n xs) i = (n, (xs, i))
+  let defs = Map.fromList $ zipWith f multDefs [0 ..]
+  (shouldBeEmpty, _, res) <- foldl (>>=) (return (defs, Set.empty, Map.empty)) $ map ($ expected) cases
+  isEmpty shouldBeEmpty
+  refRes <- getRef <&> RefVar
+  let codeCases = foldr (\(_, c) acc -> c ++ acc) [] $ Map.elems res :: Code
+  let xs = map (\(x, (ref, _)) -> (x, ref)) $ Map.toAscList res
+  defType <- getRef <&> RefVar
+  endCase <- getRef
+  whichCode' <-
+    traverse
+      ( \(i, callFunc) ->
+          getRef <&> RefVar >>= \s' -> getRef >>= \label ->
+            return ( [ TacLabel label
+                     , TacPushParam refCase
+                     , TacCall (RefVar callFunc)
+                     , TacGoto endCase
+                     ]
+                   , [ TacOp s' defType OpNeq (RefConstInt i),
+                       TacIfExp s' label
+                     ]
+                   )
+      )
+      xs
+  let whichCode = concatMap snd whichCode' :: Code
+  let callWhichCode = concatMap fst whichCode' :: Code
+  refTemp <- getRef
+  return
+    ( refRes,
+      codeCase ++ TacGoto refTemp : codeCases ++
+      [ TacLabel refTemp
+      , TacCopy defType (RefInf refCase $ RefConstInt 0)
+      ] ++ whichCode
+    ++ callWhichCode ++
+      [ TacLabel endCase
+      , TacCopy refRes RefSP
+      ]
+    , expected
+    )
+defCaseOf' (Right (_, _, dt)) _ _ = strError $ "Expected data definition for a case of, but got " ++ repr dt
+defCaseOf' _ _ _ = strError "Couldn't infer type of case. Add a local variable"
+
+defCase :: Name -> Exp' -> DataType -> CaseAcc -> Alex CaseAcc
+defCase name fun dt (defs, alreadyDef, res)
+  | Set.member name alreadyDef = strError $ "Name " ++ name ++ " is already catched in case of"
+  | not (Map.member name defs) = strError $ "Name " ++ name ++ " is not a valid definition"
+  | otherwise = do
+    let (def, i) = defs Map.! name
+    let defs' = Map.delete name defs
+    let alreadyDef' = Set.insert name alreadyDef
+    let dt' = TypeFun $ init def ++ [dt]
+    (ref, code, _) <- checkType dt' fun
+    refLabel <- getRef
+    otherRef <- getRef <&> RefVar
+    let nums = init . scanl (+) 1 . map sizeof $ init def
+    let res' =
+          Map.insert
+            i
+            ( refLabel,
+              code ++ TacFuncLabel refLabel :
+              TacGetParam otherRef 0 :
+              reverse
+                ( map
+                    (TacPushParam . RefInf otherRef . RefConstInt)
+                    nums
+                )
+                ++ [TacCall ref, TacReturn RefSP]
+            )
+            res
+    return (defs', alreadyDef', res')

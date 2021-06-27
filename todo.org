@@ -1,9 +1,0 @@
-* TODO Tipus caràcter
-* TODO repeat/until
-* TODO for
-* TODO main
-* TODO arrays
-* TODO Bugs
-- [-] Les operacions binaries que funcionen amb cada un van rares.
-  + [X] Golden Tests
-  + [ ] Aplanar les expressions per veure si així funcionen

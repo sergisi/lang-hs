@@ -136,7 +136,7 @@ Parameters : Parameters '(' Def ')'        { $3 : $1 }
 Def :: { Exp }
 Def : PrimitiveExp                         { $1 }
     | name Parameters                      { applyFunc $1 $2 }
-    | "fun" Names '{' Statements Def '}'   { return . Left $ functionDef $2 $4 $5 }
+    | "fun" Names '{' Statements Def '}'   { return . Left $ functionDef (reverse $2) $4 $5 }
     | "()"                                 { return $ Right (unit, [], TypeUnit) }
     | '[' Defs ']'                         { defineArray $2 }
     | "if" Def '{' Statements Def '}'
@@ -156,7 +156,7 @@ Cases : Cases ',' Case                     { $3 : $1 }
       | Case                               { [$1] }
 
 Case :: { DataType -> CaseAcc -> Alex CaseAcc }
-Case : name Names '{' Statements Def '}' { defCase $1 (Left $ functionDef $2 $4 $5)}
+Case : name Names '{' Statements Def '}' { defCase $1 (Left $ functionDef (reverse $2) $4 $5)}
 
 Defs :: { [Exp] }
 Defs : Defs ',' Def       { $3 :$1 }

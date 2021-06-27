@@ -75,7 +75,7 @@ import Control.Applicative (liftA2)
 
 %nonassoc '<' '>' ">=" "<=" "==" "!="
 %left '+' '-' '|' '^' "||" '^'
-%left '*' '/' '%' '&' "<<" ">>" "div" "&&"
+%left '*' '/' '%' '&' "<<" ">>" "div" "&&" "mod"
 %left "cast" "real" '~' '!'
 %right "->"
 %%

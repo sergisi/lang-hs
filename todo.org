@@ -1,9 +1,31 @@
-* TODO Tipus caràcter
-* TODO repeat/until
-* TODO for
-* TODO main
-* TODO arrays
-* TODO Bugs
-- [-] Les operacions binaries que funcionen amb cada un van rares.
+* DONE Tipus caràcter
+* DONE repeat/until
+* DONE for
+* DONE main
+* DONE arrays
+* TODO case
+Definition example
+#+begin_src haskell
+_definitions =
+  [ fromList
+      [ ( "Ha"
+        , DataDef
+          "Ha"
+          [ MultDef { multName = "Haha", parameters =
+                                         [TypeDef "Ha"] }
+          , MultDef
+            { multName   = "Ha"
+            , parameters = [TypeInt,
+                             TypeFun [TypeReal, TypeBool],
+                             TypeDef "Ha"]
+            }
+          ]
+        )
+      ]
+  ]
+#+end_src
+
+* DONE Bugs
+- [X] Les operacions binaries que funcionen amb cada un van rares.
   + [X] Golden Tests
-  + [ ] Aplanar les expressions per veure si així funcionen
+  + [X] Aplanar les expressions per veure si així funcionen

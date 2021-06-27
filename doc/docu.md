@@ -24,7 +24,7 @@ A continuació és mostra un llistat de les caràcteristiques principals que s'h
 - S'ha creat l'estructura repeat/until (veure a test/files/repeat_until)  
 - Adicionalment s'ha creat l'estructura map (veure a test/files/map)  
 - Adicionalment s'ha implementat la definició de tipus mitjançant data. (Veure a test/files/data)
-- Juntament amb data s'ha implementat l'estructura case of.
+- Juntament amb data s'ha implementat l'estructura case of. (Veure a test/files/case_of)
 
 ## Three Address Code
 Es pot veure la sintàxis del còdi generat en els fitxers amb extensió .tac de la carpeta test/files. És la carpeta on hi ha tots els testos, en els casos en que testejem errors no es jenera el codi de tres adreces si no que es printa l'error. La sintàxi es pot observar en els fitxers .tac que es generen a partir dels testos amb el còdi correcte.

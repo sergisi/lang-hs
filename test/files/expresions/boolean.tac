@@ -1,8 +1,8 @@
 Func yy
     goto temp28
 Func temp27
-    b := param 1
-    a := param 2
+    a := param 1
+    b := param 2
     temp29 := ¬ a
     return temp29
 Label temp28
@@ -11,8 +11,8 @@ Label temp28
 Func rr
     goto temp25
 Func temp24
-    b := param 1
-    a := param 2
+    a := param 1
+    b := param 2
     temp26 := a != b
     return temp26
 Label temp25
@@ -21,8 +21,8 @@ Label temp25
 Func ee
     goto temp22
 Func temp21
-    b := param 1
-    a := param 2
+    a := param 1
+    b := param 2
     temp23 := a == b
     return temp23
 Label temp22
@@ -31,8 +31,8 @@ Label temp22
 Func ww
     goto temp19
 Func temp18
-    b := param 1
-    a := param 2
+    a := param 1
+    b := param 2
     temp20 := a || b
     return temp20
 Label temp19
@@ -41,8 +41,8 @@ Label temp19
 Func qq
     goto temp16
 Func temp15
-    b := param 1
-    a := param 2
+    a := param 1
+    b := param 2
     temp17 := a && b
     return temp17
 Label temp16

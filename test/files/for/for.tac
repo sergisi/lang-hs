@@ -9,8 +9,8 @@ Func temp0
     temp2 @ 7 := 4
     goto temp4
 Func temp3
-    a := param 1
-    acc := param 2
+    acc := param 1
+    a := param 2
     temp5 := acc + a
     return temp5
 Label temp4

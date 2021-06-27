@@ -15,8 +15,8 @@ Label temp4
 Func doSomething
     goto temp1
 Func temp0
-    b := param 1
-    a := param 2
+    a := param 1
+    b := param 2
     temp2 := a + b
     return temp2
 Label temp1

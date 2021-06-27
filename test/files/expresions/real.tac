@@ -10,8 +10,8 @@ Label temp64
 Func aa
     goto temp61
 Func temp60
-    b := param 1
-    a := param 2
+    a := param 1
+    b := param 2
     temp62 := a >= b
     return temp62
 Label temp61
@@ -20,8 +20,8 @@ Label temp61
 Func pp
     goto temp58
 Func temp57
-    b := param 1
-    a := param 2
+    a := param 1
+    b := param 2
     temp59 := a <= b
     return temp59
 Label temp58
@@ -30,8 +30,8 @@ Label temp58
 Func oo
     goto temp55
 Func temp54
-    b := param 1
-    a := param 2
+    a := param 1
+    b := param 2
     temp56 := a > b
     return temp56
 Label temp55
@@ -40,8 +40,8 @@ Label temp55
 Func ii
     goto temp52
 Func temp51
-    b := param 1
-    a := param 2
+    a := param 1
+    b := param 2
     temp53 := a < b
     return temp53
 Label temp52
@@ -50,8 +50,8 @@ Label temp52
 Func uu
     goto temp49
 Func temp48
-    b := param 1
-    a := param 2
+    a := param 1
+    b := param 2
     temp50 := a != b
     return temp50
 Label temp49
@@ -60,8 +60,8 @@ Label temp49
 Func yy
     goto temp46
 Func temp45
-    b := param 1
-    a := param 2
+    a := param 1
+    b := param 2
     temp47 := a == b
     return temp47
 Label temp46
@@ -70,8 +70,8 @@ Label temp46
 Func tt
     goto temp43
 Func temp42
-    b := param 1
-    a := param 2
+    a := param 1
+    b := param 2
     temp44 := a // b
     return temp44
 Label temp43
@@ -80,8 +80,8 @@ Label temp43
 Func ee
     goto temp40
 Func temp39
-    b := param 1
-    a := param 2
+    a := param 1
+    b := param 2
     temp41 := a * b
     return temp41
 Label temp40
@@ -90,8 +90,8 @@ Label temp40
 Func ww
     goto temp37
 Func temp36
-    b := param 1
-    a := param 2
+    a := param 1
+    b := param 2
     temp38 := a - b
     return temp38
 Label temp37
@@ -100,8 +100,8 @@ Label temp37
 Func qq
     goto temp34
 Func temp33
-    b := param 1
-    a := param 2
+    a := param 1
+    b := param 2
     temp35 := 1.1 + 1.1
     return temp35
 Label temp34

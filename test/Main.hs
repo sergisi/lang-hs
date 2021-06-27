@@ -75,6 +75,7 @@ tests = do
   gTestsFor <- goldenTests "Golden For" "./test/files/for"
   gTestsGetFrom <- goldenTests "Golden Get/From" "./test/files/get_from"
   gTestsData <- goldenTests "Golden data" "./test/files/data"  
+  gTestsCaseOf <- goldenTests "Golden Case/Of" "./test/files/case_of" 
   return $ testGroup "Tests" [gTestsFunctions, 
                               gTestsConditional,
                               gTestsAmbits, 
@@ -86,6 +87,7 @@ tests = do
                               gTestsFor,
                               gTestsGetFrom,
                               gTestsData,
+                              gTestsCaseOf,
                               funcTests, 
                               dataTests]
 

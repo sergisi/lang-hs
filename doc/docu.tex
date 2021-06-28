@@ -37,9 +37,8 @@ que s'han implementat en aquest llenguatge:
 \item Juntament amb data s'ha implementat l'estructura case of. (Vegeu a test/files/case\_of/case\_of.chs)
 \end{itemize}
 \subsection{Three Address Code}
-Per tal de realitzar la generació de codi es crea un tipus ThreeAdressCode en el qual definim el llenguatge al qual traduïm. Tot el codi del nostre llenguatge es tradueix a aquest codi de tres adreces i posteriorment implementarem una instància de la Typclass Repr d'aquest tipus per tal de fer-ne la traducció a String senzilla. Aquesta instància de la Typeclass Repr farà la visualització d'aquest codi generat una tasca més còmode.
-Es pot veure la sintaxi del codi generat en els fitxers amb extensió\\
-.tac de la carpeta test/files. En algun dels testos es proven casos d'error, i per tant en aquells no hi ha codi de tres adreces generat. S'ha de veure d'aquells en què no es prova un cas d'error.
+Per tal de realitzar la generació de codi es crea un tipus ThreeAdressCode en el qual definim el llenguatge al qual traduïm. Tot el codi del nostre llenguatge es tradueix a aquest codi de tres adreces i posteriorment implementarem una instància de la Typclass Repr d'aquest tipus per tal de fer-ne la traducció a String senzilla. Aquesta instància de la Typeclass Repr farà la visualització d'aquest codi generat una tasca més còmode.\\
+Es pot veure la sintaxi del codi generat en els fitxers amb extensió .tac de la carpeta test/files. En algun dels testos es proven casos d'error, i per tant en aquells no hi ha codi de tres adreces generat. S'ha de veure d'aquells en què no es prova un cas d'error.
 \subsubsection{Tests}
 Els tests s'han realitzat mitjançant una tècnica anomenada \href{https://hackage.haskell.org/package/tasty-golden}{Golden Testing}. Aquesta tècnica consisteix a facilitar els testos de programes que escriuen el seu resultat en fitxers. Aquesta tècnica de testing bolca els resultats dels programes en fitxers, per passar el test aquest resultat ha de ser idèntic que els resultats dels anomenats "Golden files", els quals contenen el resultat correcte del test.
 \subsection{Taula de símbols}

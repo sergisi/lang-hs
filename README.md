@@ -36,9 +36,12 @@ Per tal d'executar els tests:
 cabal v2-run test-suite:TestSuite
 ```
 
-# Link Repo
+## Documentació
+La documentació es troba a la carpeta doc sota el nom docu.pdf.
+
+## Link Repo
 https://github.com/sergisi/lang-hs
 
-# Autors
+## Autors
 Sergi Simón Balcells
 Joaquim Picó Mora
